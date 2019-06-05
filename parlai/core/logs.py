@@ -4,10 +4,17 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 """
-Log metrics to tensorboard.
+Provides utilities for logging metrics.
 
-This file provides interface to log any metrics in tensorboard, could be
-extended to any other tool like visdom.
+This file provides interface to log metrics in tensorboard or visdom.
+
+If you use visdom logging, instructions please follow the instructions
+at https://github.com/facebookresearch/visdom to install visdom,
+and launch a local visdom server.
+
+.. code-block: none
+
+    visdom  # i.e., in screen or tmux
 
 If you use tensorboard logging, all event folders will be stored in
 ``PARLAI_DATA/tensorboard`` folder. In order to Open it with TB, launch
@@ -23,7 +30,68 @@ tensorboard as:
 import os
 
 
-class TensorboardLogger(object):
+class Logger(object):
+    """Main class for logging API."""
+
+    @staticmethod
+    def add_cmdline_args(argparser):
+        logger = argparser.add_argument_group('Logging Arguments')
+        logger.add_argument('-logmet', '--logger-metrics', type=str, default=None,
+            help='Specify metrics which you want to track. These will be extracted '
+                 'from the report dictionary.',
+            hidden=True)
+        return logger
+    
+    def add_metrics(self, setting, step, report):
+        """
+        Add all metrics from tensorboard_metrics opt key.
+
+        :param setting: graph titles, whether doing training or evaluation
+        :param step: graph x axis, typically number of parleys in training or wall
+            clock time in validation
+        :param report: dictionary containing metric keys and values
+        """
+        raise RuntimeError('Subclass must implement this.')
+
+
+class VisdomLogger(Logger):
+    """Log objects to Visdom."""
+
+    @staticmethod
+    def add_cmdline_args(argparser):
+        logger = argparser.add_argument_group('Visdom Arguments')
+        super(Logger, cls).add_cmdline_args(argparser)
+        return logger
+
+    def __init__(self, opt, shared=None):
+        try:
+            import visdom
+        except ImportError:
+            raise ImportError('Need to install Visdom: go to github.com/facebookresearch/visdom')
+        
+        self.vis = visdom.Visdom()
+        self.metrics = {}
+        for metric in opt.get('logger_metrics'):
+            self.metrics[metric] = []
+
+    def add_metrics(self, setting, step, report):
+        """
+        Add all metrics from tensorboard_metrics opt key.
+
+        :param setting: graph titles, whether doing training or evaluation
+        :param step: graph x axis, typically number of parleys in training or wall
+            clock time in validation
+        :param report: dictionary containing metric keys and values
+        """
+        for key, queue in self.metrics.items():
+            if key in report:
+                queue.append((step, report[key]))
+    
+    
+
+
+
+class TensorboardLogger(Logger):
     """Log objects to tensorboard."""
 
     _shared_state = {}
@@ -53,6 +121,8 @@ class TensorboardLogger(object):
             hidden=True,
             help='Add any line here to distinguish your TB event file, optional'
         )
+        super(Logger, cls).add_cmdline_args(argparser)
+        return logger
 
     def __init__(self, opt):
         self.__dict__ = self._shared_state
@@ -92,7 +162,6 @@ class TensorboardLogger(object):
         :param step: num of parleys (x axis in graph), in train - parleys, in
             valid - wall time
         :param report: from TrainingLoop
-        :return:
         """
         for met in self.tbmetrics:
             if met in report.keys():
