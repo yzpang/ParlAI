@@ -14,8 +14,6 @@ except ImportError:
         'pip install pytorch-pretrained-bert'
     )
 
-from .helpers import VOCAB_PATH
-
 import os
 
 
@@ -27,7 +25,12 @@ class BertDictionaryAgent(DictionaryAgent):
         super().__init__(opt)
         # initialize from vocab path
         download(opt['datapath'])
-        vocab_path = os.path.join(opt['datapath'], 'models', 'bert_models', VOCAB_PATH)
+        vocab_path = os.path.join(
+            opt['datapath'],
+            'models',
+            'bert_models',
+            f'{opt["bert-model-name"]}-vocab.txt',
+        )
         self.tokenizer = BertTokenizer.from_pretrained(vocab_path)
 
         self.start_token = '[CLS]'

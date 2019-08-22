@@ -23,9 +23,6 @@ from torch.optim.optimizer import required
 from torch.nn.utils import clip_grad_norm_
 
 
-VOCAB_PATH = 'bert-base-uncased-vocab.txt'
-
-
 def add_common_args(parser):
     """Add command line arguments for this agent."""
     TorchRankerAgent.add_cmdline_args(parser)
