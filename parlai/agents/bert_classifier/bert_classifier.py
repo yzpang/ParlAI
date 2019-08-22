@@ -7,11 +7,7 @@
 """BERT classifier agent uses bert embeddings to make an utterance-level classification."""
 
 from parlai.agents.bert_ranker.bert_dictionary import BertDictionaryAgent
-from parlai.agents.bert_ranker.helpers import (
-    BertWrapper,
-    get_bert_optimizer,
-    MODEL_PATH,
-)
+from parlai.agents.bert_ranker.helpers import BertWrapper, get_bert_optimizer
 from parlai.core.utils import load_opt_file
 from parlai.core.torch_agent import History
 from parlai.core.torch_classifier_agent import TorchClassifierAgent
@@ -62,7 +58,7 @@ class BertClassifierAgent(TorchClassifierAgent):
         # download pretrained models
         download(opt['datapath'])
         self.pretrained_path = os.path.join(
-            opt['datapath'], 'models', 'bert_models', MODEL_PATH
+            opt['datapath'], 'models', 'bert_models', f'{opt["bert-model-name"]}.tar.gz'
         )
         opt['pretrained_path'] = self.pretrained_path
         self.add_cls_token = opt.get('add_cls_token', True)

@@ -23,7 +23,6 @@ from torch.optim.optimizer import required
 from torch.nn.utils import clip_grad_norm_
 
 
-MODEL_PATH = 'bert-base-uncased.tar.gz'
 VOCAB_PATH = 'bert-base-uncased-vocab.txt'
 
 
@@ -80,6 +79,12 @@ def add_common_args(parser):
         default='first',
         choices=['first', 'max', 'mean'],
         help='How do we transform a list of output into one',
+    )
+    parser.add_argument(
+        '--bert-model-name',
+        type=str,
+        default='bert-base-uncased',
+        help='Name of pretrained BERT model',
     )
     parser.set_defaults(
         label_truncate=300,

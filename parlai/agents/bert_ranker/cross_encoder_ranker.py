@@ -14,7 +14,6 @@ from .helpers import (
     get_bert_optimizer,
     add_common_args,
     surround,
-    MODEL_PATH,
 )
 
 import os
@@ -35,7 +34,7 @@ class CrossEncoderRankerAgent(TorchRankerAgent):
         # download pretrained models
         download(opt['datapath'])
         self.pretrained_path = os.path.join(
-            opt['datapath'], 'models', 'bert_models', MODEL_PATH
+            opt['datapath'], 'models', 'bert_models', f'{opt["bert-model-name"]}.tar.gz'
         )
 
         super().__init__(opt, shared)

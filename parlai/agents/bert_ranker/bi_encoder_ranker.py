@@ -15,7 +15,6 @@ from .helpers import (
     BertModel,
     add_common_args,
     surround,
-    MODEL_PATH,
 )
 
 import os
@@ -37,7 +36,7 @@ class BiEncoderRankerAgent(TorchRankerAgent):
         # download pretrained models
         download(opt['datapath'])
         self.pretrained_path = os.path.join(
-            opt['datapath'], 'models', 'bert_models', MODEL_PATH
+            opt['datapath'], 'models', 'bert_models', f'{opt["bert-model-name"]}.tar.gz'
         )
         opt['pretrained_path'] = self.pretrained_path
 
