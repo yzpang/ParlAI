@@ -102,6 +102,12 @@ class BertClassifierAgent(TorchClassifierAgent):
             help='separate the last utterance into a different'
             'segment with [SEP] token in between',
         )
+        parser.add_argument(
+            '--bert-model-name',
+            type=str,
+            default='bert-base-uncased',
+            help='Name of pretrained BERT model',
+        )
         parser.set_defaults(dict_maxexs=0)  # skip building dictionary
 
     @staticmethod
