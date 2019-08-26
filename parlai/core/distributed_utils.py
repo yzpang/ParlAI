@@ -241,14 +241,12 @@ def check_synced_parameters(model):
         # if things aren't distributed, of course things are in sync
         return True
 
-    # compute the local norm:
-    norm2 = sum((p.data ** 2).sum().float() for p in model.parameters()).item()
-    all_versions = all_gather_list(norm2)
-    if not all(n == norm2 for n in all_versions):
-        raise AssertionError(
-            "Some models parameters were out of sync. Got the following norms: {}".format(
-                " ".join(str(x) for x in all_versions)
+    for p in model.parameters():
+        phat = p.data.clone()
+        torch.distributed.all_reduce(phat, op=torch.distributed.ReduceOp.MIN)
+        if not torch.all(phat == p.data):
+            raise AssertionError(
+                f'Some models parameters were out of sync.\nExpect: {p}\nGot: {phat}'
             )
-        )
 
     return True
