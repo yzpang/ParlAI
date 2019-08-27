@@ -21,7 +21,7 @@ import hashlib
 import tqdm
 import math
 import traceback
-from multiprocessing import Pool
+from torch.multiprocessing import Pool
 
 
 def built(path, version_string=None):
