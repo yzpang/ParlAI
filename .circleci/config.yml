@@ -180,8 +180,13 @@ jobs:
       - <<: *installdeps
       - <<: *installtorchgpu11
       - run:
+          name: nvidia-smi
+          command: nvidia-smi
+      - run:
           name: Unit tests (GPU; pytorch 1.1)
           command: python setup.py test -s tests.suites.unittests -v
+          environment:
+            NCCL_DEBUG: INFO
 
   unittests_gpu12:
     <<: *gpu
@@ -194,8 +199,13 @@ jobs:
       - <<: *installdeps
       - <<: *installtorchgpu12
       - run:
+          name: nvidia-smi
+          command: nvidia-smi
+      - run:
           name: Unit tests (GPU; pytorch 1.2)
           command: python setup.py test -s tests.suites.unittests -v
+          environment:
+            NCCL_DEBUG: INFO
 
   black:
     <<: *standard_cpu36
@@ -250,6 +260,9 @@ jobs:
       - <<: *setup
       - <<: *installdeps
       - <<: *installtorchgpu12
+      - run:
+          name: nvidia-smi
+          command: nvidia-smi
       - run:
           name: Nightly GPU tests
           no_output_timeout: 60m
