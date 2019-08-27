@@ -66,6 +66,7 @@ class TestDistributed(unittest.TestCase):
                 ffn_size=32,
                 embedding_size=32,
                 beam_size=1,
+                verbose=True,
             )
         )
 
