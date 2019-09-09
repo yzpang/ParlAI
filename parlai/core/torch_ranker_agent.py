@@ -207,7 +207,7 @@ class TorchRankerAgent(TorchAgent):
         self.sets['empathetic_dialogues'] = set()
         with open('/private/home/ems/GitHub/facebookresearch/ParlAI/data/empatheticdialogues/empatheticdialogues/train.csv', 'r') as f:
             for line in f:
-                self.sets['empathetic_dialogues'].add(line.split(',')[5])
+                self.sets['empathetic_dialogues'].add(line.split(',')[5].replace('_comma_', ','))
         print(len(self.sets['empathetic_dialogues']))
 
         # Load Wizard of Wikipedia
