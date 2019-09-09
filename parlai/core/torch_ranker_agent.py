@@ -199,7 +199,7 @@ class TorchRankerAgent(TorchAgent):
         with open('/private/home/ems/GitHub/facebookresearch/ParlAI/data/ConvAI2/train_self_original_no_cands.txt', 'r') as f:
             for line in f:
                 if 'your_persona' not in line:
-                    self.sets['convai2'].add(line.split('\t')[-1])
+                    self.sets['convai2'].add(line.split('\t')[-1].rstrip())
         print(len(self.sets['convai2']))
 
         # Load EmpatheticDialogues
