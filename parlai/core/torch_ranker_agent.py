@@ -12,6 +12,7 @@ See the TorchRankerAgent tutorial for examples.
 
 from abc import abstractmethod
 from itertools import islice
+import json
 import os
 from tqdm import tqdm
 
@@ -187,6 +188,37 @@ class TorchRankerAgent(TorchAgent):
             self.model = torch.nn.parallel.DistributedDataParallel(
                 self.model, device_ids=[self.opt['gpu']], broadcast_buffers=False
             )
+
+        # # Hack to load in candidate sets
+        # TODO: remove all of this!
+        self.sets = {}
+
+        # Load ConvAI2
+        print('Loading ConvAI2.')
+        self.sets['convai2'] = set()
+        with open('/private/home/ems/GitHub/facebookresearch/ParlAI/data/ConvAI2/train_self_original_no_cands.txt', 'r') as f:
+            for line in f:
+                if 'your_persona' not in line:
+                    self.sets['convai2'].add(line.split('\t')[-1])
+        print(len(self.sets['convai2']))
+
+        # Load EmpatheticDialogues
+        print('Loading EmpatheticDialogues.')
+        self.sets['empathetic_dialogues'] = set()
+        with open('/private/home/ems/GitHub/facebookresearch/ParlAI/data/empatheticdialogues/empatheticdialogues/train.csv', 'r') as f:
+            for line in f:
+                self.sets['empathetic_dialogues'].add(line.split(',')[5])
+        print(len(self.sets['empathetic_dialogues']))
+
+        # Load Wizard of Wikipedia
+        print('Loading Wizard of Wikipedia.')
+        self.sets['wizard_of_wikipedia'] = set()
+        with open('/private/home/ems/GitHub/facebookresearch/ParlAI/data/wizard_of_wikipedia/train.json', 'r') as f:
+            all_lines = json.load(f)
+            for line in all_lines:
+                for turn in line['dialog']:
+                    self.sets['wizard_of_wikipedia'].add(turn['text'])
+        print(len(self.sets['wizard_of_wikipedia']))
 
     def build_criterion(self):
         """
@@ -446,6 +478,11 @@ class TorchRankerAgent(TorchAgent):
             cand_preds = self.block_repeats(cand_preds)
 
         preds = [cand_preds[i][0] for i in range(batchsize)]
+        cand_sources = []
+        for source, cand_set in self.sets.items():
+            if cand_preds[0] in cand_set:
+                cand_sources.append(source)
+        print(f'Top candidate found in: {", ".join(cand_sources)}')
         return Output(preds, cand_preds)
 
     def block_repeats(self, cand_preds):
