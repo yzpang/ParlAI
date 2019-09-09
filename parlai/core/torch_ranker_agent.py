@@ -207,7 +207,7 @@ class TorchRankerAgent(TorchAgent):
         self.sets['empathetic_dialogues'] = set()
         with open('/private/home/ems/GitHub/facebookresearch/ParlAI/data/empatheticdialogues/empatheticdialogues/train.csv', 'r') as f:
             for line in f:
-                self.sets['empathetic_dialogues'].add(line.split(',')[5].replace('_comma_', ','))
+                self.sets['empathetic_dialogues'].add(line.split(',')[5].replace('_comma_', ',').rstrip())
         print(len(self.sets['empathetic_dialogues']))
 
         # Load Wizard of Wikipedia
@@ -217,7 +217,7 @@ class TorchRankerAgent(TorchAgent):
             all_lines = json.load(f)
             for line in all_lines:
                 for turn in line['dialog']:
-                    self.sets['wizard_of_wikipedia'].add(turn['text'])
+                    self.sets['wizard_of_wikipedia'].add(turn['text'].rstrip())
         print(len(self.sets['wizard_of_wikipedia']))
 
     def build_criterion(self):
