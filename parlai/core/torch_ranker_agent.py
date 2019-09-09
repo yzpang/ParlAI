@@ -482,7 +482,7 @@ class TorchRankerAgent(TorchAgent):
         for source, cand_set in self.sets.items():
             if cand_preds[0][0] in cand_set:
                 cand_sources.append(source)
-        print(f'Top candidate found in: {", ".join(cand_sources)}')
+        print(f'\nTop candidate found in: {", ".join(cand_sources)}')
         return Output(preds, cand_preds)
 
     def block_repeats(self, cand_preds):
