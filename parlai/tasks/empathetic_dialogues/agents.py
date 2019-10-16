@@ -207,6 +207,8 @@ class EmotionClassificationSituationTeacher(EmpatheticDialogueTeacher):
         super().__init__(opt, shared)
         if not shared:
             self._get_situations()
+        self.fold = opt.get('datatype', 'train').split(':')[0]
+        self.f_situations = open()
     
     def num_episodes(self):
         return len(self.data)
@@ -225,7 +227,9 @@ class EmotionClassificationSituationTeacher(EmpatheticDialogueTeacher):
     
         ex = self.data[episode_idx]
         episode_done = True
-        
+
+        import pdb; pdb.set_trace()
+        # {{{TODO: write ex[3] to the situations file and ex[2] to the emotions file}}}
         return {
             'situation': ex[0],
             'labels': [ex[2]],

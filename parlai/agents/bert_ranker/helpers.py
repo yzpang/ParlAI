@@ -162,7 +162,10 @@ class BertWrapper(torch.nn.Module):
             embeddings = embedding_layer[:, 0, :]
 
         # We need this in case of dimensionality reduction
-        result = self.bottleneck_linear_layer(self.additional_linear_layer(embeddings))
+        result = self.additional_linear_layer(embeddings)
+        import pdb; pdb.set_trace()
+        # {{{TODO: save embedding in the same format as how fastText does it}}}
+        result = self.bottleneck_linear_layer(result)
 
         # Sort of hack to make it work with distributed: this way the pooler layer
         # is used for grad computation, even though it does not change anything...
