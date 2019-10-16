@@ -120,8 +120,8 @@ class BertWrapper(torch.nn.Module):
                 hidden_act='gelu',
             )
             self.additional_transformer_layer = BertLayer(config_for_one_layer)
-        self.bottleneck_linear_layer = torch.nn.Linear(bert_output_dim, 8)
-        self.additional_linear_layer = torch.nn.Linear(8, output_dim)
+        self.additional_linear_layer = torch.nn.Linear(bert_output_dim, 8)
+        self.bottleneck_linear_layer = torch.nn.Linear(8, output_dim)
         self.bert_model = bert_model
 
     def forward(self, token_ids, segment_ids, attention_mask):
@@ -162,7 +162,7 @@ class BertWrapper(torch.nn.Module):
             embeddings = embedding_layer[:, 0, :]
 
         # We need this in case of dimensionality reduction
-        result = self.additional_linear_layer(self.bottleneck_linear_layer(embeddings))
+        result = self.bottleneck_linear_layer(self.additional_linear_layer(embeddings))
 
         # Sort of hack to make it work with distributed: this way the pooler layer
         # is used for grad computation, even though it does not change anything...
