@@ -11,7 +11,7 @@ import os
 import sys as _sys
 import datetime
 import parlai
-import git
+# import git
 
 from parlai.core.agents import get_agent_module, get_task_module
 from parlai.core.build_data import modelzoo_path
@@ -21,25 +21,25 @@ from parlai.utils.misc import Opt, load_opt_file
 from typing import List, Optional
 
 
-def print_git_commit():
-    """Print the current git commit of ParlAI and parlai_internal."""
-    root = os.path.dirname(os.path.dirname(parlai.__file__))
-    internal_root = os.path.join(root, 'parlai_internal')
-    try:
-        git_ = git.Git(root)
-        current_commit = git_.rev_parse('HEAD')
-        print(f'[ Current ParlAI commit: {current_commit} ]')
-    except git.GitCommandNotFound:
-        pass
-    except git.GitCommandError:
-        pass
-
-    try:
-        git_ = git.Git(internal_root)
-        internal_commit = git_.rev_parse('HEAD')
-        print(f'[ Current internal commit: {internal_commit} ]')
-    except git.GitCommandNotFound:
-        pass
+# def print_git_commit():
+#     """Print the current git commit of ParlAI and parlai_internal."""
+#     root = os.path.dirname(os.path.dirname(parlai.__file__))
+#     internal_root = os.path.join(root, 'parlai_internal')
+#     try:
+#         git_ = git.Git(root)
+#         current_commit = git_.rev_parse('HEAD')
+#         print(f'[ Current ParlAI commit: {current_commit} ]')
+#     except git.GitCommandNotFound:
+#         pass
+#     except git.GitCommandError:
+#         pass
+#
+#     try:
+#         git_ = git.Git(internal_root)
+#         internal_commit = git_.rev_parse('HEAD')
+#         print(f'[ Current internal commit: {internal_commit} ]')
+#     except git.GitCommandNotFound:
+#         pass
 
 
 def print_announcements(opt):
@@ -994,7 +994,7 @@ class ParlaiParser(argparse.ArgumentParser):
 
         if print_args:
             self.print_args()
-            print_git_commit()
+            # print_git_commit()
             print_announcements(self.opt)
 
         return self.opt
