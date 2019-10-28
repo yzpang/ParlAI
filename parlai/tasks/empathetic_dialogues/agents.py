@@ -242,10 +242,8 @@ class EmotionClassificationSituationTeacher(EmpatheticDialogueTeacher):
         ex = self.data[episode_idx]
         episode_done = True
 
-        import pdb
-
-        pdb.set_trace()
-        # {{{TODO: write ex[3] to the situations file and ex[2] to the emotions file}}}
+        self.f_situations.write(ex[3] + '\n')
+        self.f_emotions.write(ex[2] + '\n')
         return {
             'situation': ex[0],
             'labels': [ex[2]],
