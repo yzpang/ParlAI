@@ -124,7 +124,10 @@ class BertWrapper(torch.nn.Module):
         self.additional_linear_layer = torch.nn.Linear(bert_output_dim, 8)
         self.bottleneck_linear_layer = torch.nn.Linear(8, output_dim)
         self.bert_model = bert_model
-        self.f_embeddings = open(embeddings_path, 'w')
+        if embeddings_path is not None:
+            self.f_embeddings = open(embeddings_path, 'w')
+        else:
+            self.f_embeddings = None
 
     def forward(self, token_ids, segment_ids, attention_mask):
         """Forward pass."""
@@ -165,9 +168,10 @@ class BertWrapper(torch.nn.Module):
 
         # We need this in case of dimensionality reduction
         result = self.additional_linear_layer(embeddings)
-        for r in result.detach().cpu().numpy():
-            embedding_string = ' '.join([str(val) for val in r.tolist()])
-            self.f_embeddings.write(embedding_string + '\n')
+        if self.f_embeddings is not None:
+            for r in result.detach().cpu().numpy():
+                embedding_string = ' '.join([str(val) for val in r.tolist()])
+                self.f_embeddings.write(embedding_string + '\n')
         result = self.bottleneck_linear_layer(result)
 
         # Sort of hack to make it work with distributed: this way the pooler layer

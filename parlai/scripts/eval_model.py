@@ -54,10 +54,16 @@ def setup_args(parser=None):
         'the rouge metrics will be computed as rouge-1, rouge-2 and rouge-l',
     )
     parser.add_argument(
-        '--situations-path', type=str, help='Where to save situation texts to'
+        '--situations-path',
+        type=str,
+        default=None,
+        help='Where to save situation texts to',
     )
     parser.add_argument(
-        '--emotions-path', type=str, help='Where to save emotion labels to'
+        '--emotions-path',
+        type=str,
+        default=None,
+        help='Where to save emotion labels to',
     )
     TensorboardLogger.add_cmdline_args(parser)
     parser.set_defaults(datatype='valid')

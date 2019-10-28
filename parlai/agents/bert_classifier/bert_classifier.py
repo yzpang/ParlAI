@@ -107,7 +107,10 @@ class BertClassifierAgent(TorchClassifierAgent):
             'segment with [SEP] token in between',
         )
         parser.add_argument(
-            '--embeddings-path', type=str, help='Path to save embeddings to'
+            '--embeddings-path',
+            type=str,
+            default=None,
+            help='Path to save embeddings to',
         )
         parser.set_defaults(dict_maxexs=0)  # skip building dictionary
 
