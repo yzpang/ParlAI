@@ -204,25 +204,11 @@ class EmotionClassificationSituationTeacher(EmpatheticDialogueTeacher):
     Class for detecting the emotion based on the situation.
     """
 
-    @staticmethod
-    def add_cmdline_args(parser):
-        """Add CLI args."""
-        parser = parser.add_argument_group('EmotionClassificationSituation Arguments')
-        # class arguments
-        parser.add_argument(
-            '--situations-path', type=str, help='Where to save situation texts to'
-        )
-        parser.add_argument(
-            '--emotions-path', type=str, help='Where to save emotion labels to'
-        )
-
     def __init__(self, opt, shared=None):
         super().__init__(opt, shared)
         if not shared:
             self._get_situations()
         self.fold = self.opt.get('datatype', 'train').split(':')[0]
-        self.f_situations = open(self.opt['situations_path'], 'w')
-        self.f_emotions = open(self.opt['emotions_path'], 'w')
 
     def num_episodes(self):
         return len(self.data)
@@ -242,8 +228,6 @@ class EmotionClassificationSituationTeacher(EmpatheticDialogueTeacher):
         ex = self.data[episode_idx]
         episode_done = True
 
-        self.f_situations.write(ex[3] + '\n')
-        self.f_emotions.write(ex[2] + '\n')
         return {
             'situation': ex[0],
             'labels': [ex[2]],
