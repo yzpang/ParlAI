@@ -754,8 +754,9 @@ class BatchWorld(World):
 
             if agent_idx == 1:
                 for obs in batch_observations[agent_idx]:
-                    self.f_situations.write(obs['text'] + '\n')
-                    self.f_emotions.write(obs['eval_labels'][0] + '\n')
+                    if 'text' in obs and 'eval_labels' in obs:
+                        self.f_situations.write(obs['text'] + '\n')
+                        self.f_emotions.write(obs['eval_labels'][0] + '\n')
 
             # The agent acts.
             batch_act = self.batch_act(agent_idx, batch_observations[agent_idx])
