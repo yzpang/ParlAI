@@ -100,6 +100,7 @@ class BertWrapper(torch.nn.Module):
         self,
         bert_model,
         output_dim,
+        embeddings_path,
         add_transformer_layer=False,
         layer_pulled=-1,
         aggregation="first",

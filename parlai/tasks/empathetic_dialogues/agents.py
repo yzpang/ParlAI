@@ -198,37 +198,53 @@ class EmotionClassificationTeacher(EmpatheticDialogueTeacher):
             'label_candidates': ex[8],
         }
 
+
 class EmotionClassificationSituationTeacher(EmpatheticDialogueTeacher):
     """
     Class for detecting the emotion based on the situation.
     """
-    
+
+    @staticmethod
+    def add_cmdline_args(parser):
+        """Add CLI args."""
+        parser = parser.add_argument_group('EmotionClassificationSituation Arguments')
+        # class arguments
+        parser.add_argument(
+            '--situations-path', type=str, help='Where to save situation texts to'
+        )
+        parser.add_argument(
+            '--emotions-path', type=str, help='Where to save emotion labels to'
+        )
+
     def __init__(self, opt, shared=None):
         super().__init__(opt, shared)
         if not shared:
             self._get_situations()
-        self.fold = opt.get('datatype', 'train').split(':')[0]
-        self.f_situations = open()
-    
+        self.fold = self.opt.get('datatype', 'train').split(':')[0]
+        self.f_situations = open(self.opt['situations_path'], 'w')
+        self.f_emotions = open(self.opt['emotions_path'], 'w')
+
     def num_episodes(self):
         return len(self.data)
-                
+
     def num_examples(self):
         return len(self.data)
-    
+
     def _get_situations(self):
         new_data = []
         for ep in self.data:
-            #for ex in ep:
+            # for ex in ep:
             new_data.append(ep[0])
         self.data = new_data
-               
+
     def get(self, episode_idx, entry_idx=0):
-    
+
         ex = self.data[episode_idx]
         episode_done = True
 
-        import pdb; pdb.set_trace()
+        import pdb
+
+        pdb.set_trace()
         # {{{TODO: write ex[3] to the situations file and ex[2] to the emotions file}}}
         return {
             'situation': ex[0],
@@ -242,6 +258,7 @@ class EmotionClassificationSituationTeacher(EmpatheticDialogueTeacher):
             'episode_done': episode_done,
             'label_candidates': ex[8],
         }
+
 
 class DefaultTeacher(EmpatheticDialogueTeacher):
     pass
