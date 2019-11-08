@@ -6,6 +6,8 @@
 
 """BERT helpers."""
 
+import os
+
 from parlai.core.torch_ranker_agent import TorchRankerAgent
 from parlai.utils.misc import neginf, fp16_optimizer_wrapper
 
@@ -124,10 +126,13 @@ class BertWrapper(torch.nn.Module):
         self.additional_linear_layer = torch.nn.Linear(bert_output_dim, 8)
         self.bottleneck_linear_layer = torch.nn.Linear(8, output_dim)
         self.bert_model = bert_model
-        if embeddings_path is not None:
-            self.f_embeddings = open(embeddings_path, 'w')
-        else:
-            self.f_embeddings = None
+        self.embeddings_path = embeddings_path
+        if self.embeddings_path is not None:
+            # Delete the embeddings path if it exists
+            try:
+                os.remove(self.embeddings_path)
+            except OSError:
+                pass
 
     def forward(self, token_ids, segment_ids, attention_mask):
         """Forward pass."""
@@ -168,10 +173,11 @@ class BertWrapper(torch.nn.Module):
 
         # We need this in case of dimensionality reduction
         result = self.additional_linear_layer(embeddings)
-        if self.f_embeddings is not None:
-            for r in result.detach().cpu().numpy():
-                embedding_string = ' '.join([str(val) for val in r.tolist()])
-                self.f_embeddings.write(embedding_string + '\n')
+        if self.embeddings_path is not None:
+            with open(self.embeddings_path, 'a') as f:
+                for r in result.detach().cpu().numpy():
+                    embedding_string = ' '.join([str(val) for val in r.tolist()])
+                    f.write(embedding_string + '\n')
         result = self.bottleneck_linear_layer(result)
 
         # Sort of hack to make it work with distributed: this way the pooler layer
