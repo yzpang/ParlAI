@@ -406,6 +406,8 @@ def setup_heroku_server(
         heroku_app_name = heroku_app_name[:-1]
 
     # Create or attach to the server
+    # import pdb; pdb.set_trace()
+    heroku_app_name = heroku_app_name.replace(".","")
     try:
         if heroku_team is not None:
             subprocess.check_output(
