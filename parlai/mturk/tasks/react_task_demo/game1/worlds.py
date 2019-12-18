@@ -7,7 +7,7 @@ from parlai.mturk.core.worlds import MTurkOnboardWorld, MTurkTaskWorld
 import threading
 
 
-class AskerOnboardingWorld(MTurkOnboardWorld):
+class WriterOnboardingWorld(MTurkOnboardWorld):
     """Example onboarding world. Sends a message from the world to the
     worker and then exits as complete after the worker uses the interface
     """
@@ -15,33 +15,34 @@ class AskerOnboardingWorld(MTurkOnboardWorld):
     def parley(self):
         ad = {}
         ad['id'] = 'System'
+        # TODO: rewrite the text below
         ad['text'] = (
-            "Welcome onboard! You'll be playing the role of the asker. Ask "
-            "a question that can be answered with just a number. Send any "
-            "message to continue."
+            "Welcome onboard! You'll be playing the role of the writer. "
+            "You'll be given a prompt and your task is to write three claims "
+            "in relation with this prompt."
         )
         self.mturk_agent.observe(ad)
         self.mturk_agent.act()
         self.episodeDone = True
 
 
-class AnswererOnboardingWorld(MTurkOnboardWorld):
-    """Example onboarding world. Sends a message from the world to the
-    worker and then exits as complete after the worker uses the interface
-    """
+# class AnswererOnboardingWorld(MTurkOnboardWorld):
+#     """Example onboarding world. Sends a message from the world to the
+#     worker and then exits as complete after the worker uses the interface
+#     """
 
-    def parley(self):
-        ad = {}
-        ad['id'] = 'System'
-        ad['text'] = (
-            "Welcome onboard! You'll be playing the role of the answerer. "
-            "You'll be asked a question that should be answered with a number. "
-            "Answer with something that makes sense. Enter any number to "
-            "continue."
-        )
-        self.mturk_agent.observe(ad)
-        self.mturk_agent.act()
-        self.episodeDone = True
+#     def parley(self):
+#         ad = {}
+#         ad['id'] = 'System'
+#         ad['text'] = (
+#             "Welcome onboard! You'll be playing the role of the answerer. "
+#             "You'll be asked a question that should be answered with a number. "
+#             "Answer with something that makes sense. Enter any number to "
+#             "continue."
+#         )
+#         self.mturk_agent.observe(ad)
+#         self.mturk_agent.act()
+#         self.episodeDone = True
 
 
 class EvaluatorOnboardingWorld(MTurkOnboardWorld):
@@ -54,8 +55,8 @@ class EvaluatorOnboardingWorld(MTurkOnboardWorld):
         ad['id'] = 'System'
         ad['text'] = (
             "Welcome onboard! You'll be playing the evaluator. You'll "
-            "observe a series of three questions, and then you'll evaluate "
-            "whether or not the exchange was accurate. Send an eval to begin."
+            "be shown a prompt, a label, and a set of possible claims. Your task is to  "
+            "rank the claims based on creativity and relevance."
         )
         self.mturk_agent.observe(ad)
         self.mturk_agent.act()
@@ -74,10 +75,10 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
     def __init__(self, opt, mturk_agents):
         self.mturk_agents = mturk_agents
         for agent in mturk_agents:
-            if agent.demo_role == 'Asker':
-                self.asker = agent
-            elif agent.demo_role == 'Answerer':
-                self.answerer = agent
+            if agent.demo_role == 'Writer':
+                self.writer = agent
+            # elif agent.demo_role == 'Ranker':
+                # self.ranker = agent
             else:  # 'Evaluator'
                 self.evaluator = agent
         self.episodeDone = False
@@ -92,20 +93,23 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
             ad = {'id': 'System', 'text': "Please observe the chat for accuracy."}
             self.evaluator.observe(ad)
         if self.turns < 3:
-            # QA pairing
+            # NLI writing
+            # TODO: make prompt into a variable based on input data
             ad = {
                 'id': 'System',
-                'text': "Please ask a question with a numeric answer.",
+                'text': "Please write claims in relation with the prompt.",
+                'prompt': "This is a placeholder prompt"
             }
-            self.asker.observe(ad)
-            question = self.asker.act()
-            ad = {'id': 'System', 'text': 'Please answer this question.'}
+            self.writer.observe(prompt) 
+            self.writer.observe(ad)
+            claim = self.writer.act()
+            ad = {'id': 'System', 'text': 'Please write claims for this prompt.'}
             self.answerer.observe(ad)
-            self.answerer.observe(question)
-            self.evaluator.observe(question)
+            self.answerer.observe(claim)
+            self.evaluator.observe(claim)
             answer = self.answerer.act()
             self.evaluator.observe(answer)
-            self.asker.observe(answer)
+            self.writer.observe(answer)
             self.questions.append(question)
             self.answers.append(answer)
             self.turns += 1
@@ -115,7 +119,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
             self.evaluator.observe(ad)
             ad = {'id': 'System', 'text': "Please wait for evaluation."}
             self.answerer.observe(ad)
-            self.asker.observe(ad)
+            self.writer.observe(ad)
             self.accepter = self.evaluator.act()
             self.episodeDone = True
 

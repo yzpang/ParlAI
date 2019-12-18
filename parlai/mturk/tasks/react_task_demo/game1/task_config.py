@@ -44,11 +44,11 @@ In this task, we have two types of roles: writers and evaluators. Please read th
 <ul>
 	<li>Write one sentence that is <strong>definitely correct</strong><em>&nbsp;</em>about the situation or event in the prompt.</li>
 	<li>Write one sentence that is&nbsp;<strong>definitely incorrect</strong>&nbsp;about the situation or event in the prompt.</li>
-	<li>Write one sentence that is&nbsp;<strong>neither</strong> defintiely corrent nor incorrect about the situation or event in the prompt.</li>
+	<li>Write one sentence that is&nbsp;<strong>neither</strong> definitely correct nor incorrect about the situation or event in the prompt.</li>
 </ul>
 <font color="red">We encourage you to write sentences that are creative and require non-trivial kinds of inference.</font> You bonuses will be based on how evaluators rank you, they will be ranking you based on creativity of your sentences.
 
-<p><strong>Evaluators:</strong> you will be shown a prompt and 3 possible hypothesis sentences for the prompt with the same type of entailment label (the hypotheses are written by other MTurk workers who are in the writer pool). The three types of entialment labels---definitely correct, definitely incorrect, and neither---are explained above in the instructions for writers. <font color="red">Your task as evaluators is to rank the hypothesis sentences in terms of creativity.</font> You bonuses will be based on agreement with other evaluators.</p>
+<p><strong>Evaluators:</strong> you will be shown a prompt and 3 possible hypothesis sentences for the prompt with the same type of entailment label (the hypotheses are written by other MTurk workers who are in the writer pool). The three types of entailment labels---definitely correct, definitely incorrect, and neither---are explained above in the instructions for writers. <font color="red">Your task as evaluators is to rank the hypothesis sentences in terms of creativity.</font> You bonuses will be based on agreement with other evaluators.</p>
 
 
 <u><strong> Examples </u></strong>
