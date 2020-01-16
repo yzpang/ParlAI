@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { FormControl, Button } from 'react-bootstrap';
+import { FormControl, Button, Radio } from 'react-bootstrap';
 import $ from 'jquery';
 
 // Create custom components
@@ -196,7 +196,7 @@ class EvaluationResponse extends React.Component {
         style={submit_style}
         id="id_reject_chat_button"
         disabled={!this.props.active || this.state.sending}
-        onClick={() => this.tryMessageSend('reject')}
+        onClick={() => this.tryMessageSend('invalid')}
       >
         Reject
       </Button>
@@ -212,6 +212,49 @@ class EvaluationResponse extends React.Component {
       >
         Approve
       </Button>
+    );
+
+    let choice1 = (
+      <Radio
+        className="btn btn-success"
+        style={submit_style}
+        id="id_approve_chat_button"
+        disabled={!this.props.active || this.state.sending}
+        onClick={() => this.tryMessageSend('approve')}
+      >
+        {choice1}
+      </Radio>
+      <Radio
+        className="btn btn-success"
+        style={submit_style}
+        id="id_approve_chat_button"
+        disabled={!this.props.active || this.state.sending}
+        onClick={() => this.tryMessageSend('approve')}
+      >
+        {choice2}
+      </Radio>
+    );
+    if (reject_buttonclicked == true){
+      // TODO
+    }
+
+    // TODO: test this text box.
+    let text_input = (
+      <FormControl
+        type="text"
+        id="id_text_input"
+        style={{
+          width: '80%',
+          height: '100%',
+          float: 'left',
+          fontSize: '16px',
+        }}
+        value={this.state.textval}
+        placeholder="Optionally add explanation here..."
+        onKeyPress={e => this.handleKeyPress(e)}
+        onChange={e => this.updateValue(e.target.value)}
+        disabled={!this.props.active || this.state.sending}
+      />
     );
 
     return (
