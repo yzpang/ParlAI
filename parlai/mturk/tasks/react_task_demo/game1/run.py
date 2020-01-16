@@ -4,9 +4,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 from parlai.core.params import ParlaiParser
-from parlai.mturk.tasks.react_task_demo.react_custom_no_extra_deps.worlds import (
-    AskerOnboardingWorld,
-    AnswererOnboardingWorld,
+from parlai.mturk.tasks.react_task_demo.game1.worlds import (
+    WriterOnboardingWorld,
     EvaluatorOnboardingWorld,
     MultiRoleAgentWorld,
 )
@@ -34,7 +33,7 @@ def main():
     opt.update(task_config)
 
     # Select an agent_id that worker agents will be assigned in their world
-    mturk_agent_roles = ['Asker', 'Answerer', 'Evaluator']
+    mturk_agent_roles = ['Writer', 'Evaluator']
 
     # Instantiate an MTurkManager with the given options and a maximum number
     # of agents per world of 1 (based on the length of mturk_agent_ids)
@@ -57,10 +56,8 @@ def main():
         role_index += 1
         worker.update_agent_id('Onboarding {}'.format(role))
         worker.demo_role = role
-        if role == 'Asker':
-            world = AskerOnboardingWorld(opt=opt, mturk_agent=worker)
-        elif role == 'Answerer':
-            world = AnswererOnboardingWorld(opt=opt, mturk_agent=worker)
+        if role == 'Writer':
+            world = WriterOnboardingWorld(opt=opt, mturk_agent=worker)
         else:
             world = EvaluatorOnboardingWorld(opt=opt, mturk_agent=worker)
         while not world.episode_done():
