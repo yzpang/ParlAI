@@ -7,7 +7,12 @@
  */
 
 import React from 'react';
-import { FormControl, Button, Radio } from 'react-bootstrap';
+import { 
+  FormControl, 
+  Button, 
+  Radio,
+  ControlLabel,
+  FormGroup } from 'react-bootstrap';
 import $ from 'jquery';
 
 // Create custom components
