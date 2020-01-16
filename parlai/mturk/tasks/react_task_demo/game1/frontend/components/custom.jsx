@@ -102,22 +102,82 @@ class NumericResponse extends React.Component {
       padding: '0px',
     };
 
-    let text_input = (
-      <FormControl
-        type="text"
-        id="id_text_input"
-        style={{
-          width: '80%',
-          height: '100%',
-          float: 'left',
-          fontSize: '16px',
-        }}
-        value={this.state.textval}
-        placeholder="Please enter here..."
-        onKeyPress={e => this.handleKeyPress(e)}
-        onChange={e => this.updateValue(e.target.value)}
-        disabled={!this.props.active || this.state.sending}
-      />
+    let text_entail = (
+      <div>
+        Please write a claim that is <b> Definitely Correct </b> about the situation or event in the prompt.
+      </div>
+      );
+    let entail_input = (
+      <div>
+        <ControlLabel>{text_entail}</ControlLabel>
+        <FormControl
+          type="text"
+          id="id_text_input"
+          style={{
+            width: '80%',
+            height: '100%',
+            float: 'left',
+            fontSize: '16px',
+          }}
+          value={this.state.textval}
+          placeholder="Please enter you claim here..."
+          onKeyPress={e => this.handleKeyPress(e)}
+          onChange={e => this.updateValue(e.target.value)}
+          disabled={!this.props.active || this.state.sending}
+        />
+      </div>
+    );
+
+    let text_contradict = (
+      <div>
+        Please write a claim that is <b> Definitely Incorrect </b> about the situation or event in the prompt.
+      </div>
+      );
+    let contradict_input = (
+      <div>
+        <ControlLabel>{text_contradict}</ControlLabel>
+        <FormControl
+          type="text"
+          id="id_text_input"
+          style={{
+            width: '80%',
+            height: '100%',
+            float: 'left',
+            fontSize: '16px',
+          }}
+          value={this.state.textval}
+          placeholder="Please enter you claim here..."
+          onKeyPress={e => this.handleKeyPress(e)}
+          onChange={e => this.updateValue(e.target.value)}
+          disabled={!this.props.active || this.state.sending}
+        />
+      </div>
+    );
+
+    let text_neutral = (
+      <div>
+        Please write a claim that is <b> Neither </b> definitely correct nor definitely incorrect about the situation or event in the prompt.
+      </div>
+      );
+    let neutral_input = (
+      <div>
+        <ControlLabel>{text_neutral}</ControlLabel>
+        <FormControl
+          type="text"
+          id="id_text_input"
+          style={{
+            width: '80%',
+            height: '100%',
+            float: 'left',
+            fontSize: '16px',
+          }}
+          value={this.state.textval}
+          placeholder="Please enter you claim here..."
+          onKeyPress={e => this.handleKeyPress(e)}
+          onChange={e => this.updateValue(e.target.value)}
+          disabled={!this.props.active || this.state.sending}
+        />
+      </div>
     );
 
     // TODO attach send message callback
@@ -142,7 +202,9 @@ class NumericResponse extends React.Component {
         style={pane_style}
       >
         <div style={input_style}>
-          {text_input}
+          {entail_input}
+          {contradict_input}
+          {neutral_input}
           {submit_button}
         </div>
       </div>
@@ -214,47 +276,68 @@ class EvaluationResponse extends React.Component {
       </Button>
     );
 
-    let choice1 = (
-      <Radio
-        className="btn btn-success"
-        style={submit_style}
-        id="id_approve_chat_button"
-        disabled={!this.props.active || this.state.sending}
-        onClick={() => this.tryMessageSend('approve')}
-      >
-        {choice1}
-      </Radio>
-      <Radio
-        className="btn btn-success"
-        style={submit_style}
-        id="id_approve_chat_button"
-        disabled={!this.props.active || this.state.sending}
-        onClick={() => this.tryMessageSend('approve')}
-      >
-        {choice2}
-      </Radio>
+    let text_rank1 = "Which claim do you think is better?" ;
+    let rank1 = (
+      <div>
+        <ControlLabel> {text_rank1} </ControlLabel>
+        <FormGroup>
+          <Radio
+            name="groupOptions1"
+          >
+            Claim 1
+          </Radio>
+          <Radio
+            name="groupOptions1"
+          >
+            Claim 2
+          </Radio>
+        </FormGroup>
+      </div>
     );
-    if (reject_buttonclicked == true){
-      // TODO
-    }
 
-    // TODO: test this text box.
-    let text_input = (
-      <FormControl
-        type="text"
-        id="id_text_input"
-        style={{
-          width: '80%',
-          height: '100%',
-          float: 'left',
-          fontSize: '16px',
-        }}
-        value={this.state.textval}
-        placeholder="Optionally add explanation here..."
-        onKeyPress={e => this.handleKeyPress(e)}
-        onChange={e => this.updateValue(e.target.value)}
-        disabled={!this.props.active || this.state.sending}
-      />
+    // TODO: remove this in the 2 writer setting. redundant.
+    let text_rank2 = "Which claim do you think is worse?" ;
+    let rank2 = (
+      <div>
+        <ControlLabel> {text_rank2} </ControlLabel>
+        <FormGroup>
+          <Radio
+            name="groupOptions2"
+          >
+            Claim 1
+          </Radio>
+          <Radio
+            name="groupOptions2"
+          >
+            Claim 2
+          </Radio>
+        </FormGroup>
+      </div>
+    );
+
+    
+    let text_reasoning =
+      "Optionally, please provide a brief justification for your ranking";
+    // TODO: test text box.
+    let text_reason = (
+      <div>
+        <ControlLabel>{text_reasoning}</ControlLabel>
+        <FormControl
+          type="text"
+          id="id_text_input"
+          style={{
+            width: '80%',
+            height: '100%',
+            float: 'left',
+            fontSize: '16px',
+          }}
+          value={this.state.textval}
+          placeholder="Optionally add explanation here..."
+          onKeyPress={e => this.handleKeyPress(e)}
+          onChange={e => this.updateValue(e.target.value)}
+          disabled={!this.props.active || this.state.sending}
+        />
+      </div>
     );
 
     return (
@@ -267,6 +350,13 @@ class EvaluationResponse extends React.Component {
           {reject_button}
           {approve_button}
         </div>
+        <div style={input_style}>
+          {rank1}
+        </div>
+        <div style={input_style}>
+          {rank2}
+        </div>
+        {text_reason}
       </div>
     );
   }

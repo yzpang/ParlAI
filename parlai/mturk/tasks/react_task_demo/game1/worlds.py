@@ -142,6 +142,16 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
 
         if self.turns == 1:
             ad = {'id': 'System', 'text': "Given the prompt and label, please decide if the claim is appropriate, mark it as Invalid if the claim doesn't fit the label or is completely unrelated to the prompt."}
+
+            rankthem = {'id': 'System', 'text': "Now, given the prompt and label, please rank the claims based on creativity, complexity, and relevance. Optionally, add an explanation of your ranking to help other evaluators understand your reasoning."}
+
+            # Provide feedback to evaluators
+            self.agreed = None
+            if self.agreed = 1:
+                feedback = {'id': 'System', 'text': "You agreed with the other evaluator on the ranking for the Definitely Correct examples. Bonus = $0.5"}
+            else:
+                feedback = {'id': 'System', 'text': "You disagreed with the other evaluator on the ranking for the Definitely Correct examples."}
+
             # TODO: add additional step for validity testing of each hypothesis/claim?
             for evaluator in self.evaluators:
                 evaluator.observe(ad)
@@ -151,46 +161,82 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                 evaluator.observe(self.entail_1)
             self.ent_acc_0 = self.evaluator_0.act()
             self.ent_acc_1 = self.evaluator_1.act()
+            for evaluator in self.evaluators:
+                evaluator.observe(rankthem)
+            self.ent_rate_0 = self.evaluator_0.act()
+            self.ent_rate_1 = self.evaluator_1.act()
+
+            # TODO: get the relevant actions here. Need agreement and reasoning if not None.
+            if self.ent_rate_0 == self.ent_rate_1:
+                self.agreed = 1
+            else:
+                self.agreed = 0
+            for evaluator in self.evaluators:
+                evaluator.observe(feedback)
 
             for evaluator in self.evaluators:
                 evaluator.observe(self.contradict_0)
                 evaluator.observe(self.contradict_1)
             self.cont_acc_0 = self.evaluator_0.act()
             self.cont_acc_1 = self.evaluator_1.act()
+            for evaluator in self.evaluators:
+                evaluator.observe(rankthem)
+            self.cont_rate_0 = self.evaluator_0.act()
+            self.cont_rate_1 = self.evaluator_1.act()
+            if self.ent_rate_0 == self.ent_rate_1:
+                self.agreed = 1
+            else:
+                self.agreed = 0
+            for evaluator in self.evaluators:
+                evaluator.observe(feedback)
 
             for evaluator in self.evaluators:
                 evaluator.observe(self.neutral_0)
                 evaluator.observe(self.neutral_1)
             self.neut_acc_0 = self.evaluator_0.act()
             self.neut_acc_1 = self.evaluator_1.act()
-
-            self.turns += 1
-
-        if self.turns == 2:
-            ad = {'id': 'System', 'text': "Given the prompt and label, please rank the claims based on creativity, complexity, and relevance. Optionally, add an explanation of your ranking to help other evaluators understand your reasoning."}
-            # TODO: add additional step for validity testing of each hypothesis/claim?
             for evaluator in self.evaluators:
-                evaluator.observe(ad)
-                evaluator.observe(prompt)
-                # TODO: break this up. evluate one hypothesis at a time.
-                evaluator.observe(self.entail_0)
-                evaluator.observe(self.entail_1)
-            self.ent_rate_0 = self.evaluator_0.act()
-            self.ent_rate_1 = self.evaluator_1.act()
-
-            for evaluator in self.evaluators:
-                evaluator.observe(self.contradict_0)
-                evaluator.observe(self.contradict_1)
-            self.cont_rate_0 = self.evaluator_0.act()
-            self.cont_rate_1 = self.evaluator_1.act()
-
-            for evaluator in self.evaluators:
-                evaluator.observe(self.neutral_0)
-                evaluator.observe(self.neutral_1)
+                evaluator.observe(rankthem)
             self.neut_rate_0 = self.evaluator_0.act()
             self.neut_rate_1 = self.evaluator_1.act()
+            if self.ent_rate_0 == self.ent_rate_1:
+                self.agreed = 1
+            else:
+                self.agreed = 0
+            for evaluator in self.evaluators:
+                evaluator.observe(feedback)
 
             self.episodeDone = True
+
+        # if self.turns == 2:
+        #     ad = {'id': 'System', 'text': "Given the prompt and label, please rank the claims based on creativity, complexity, and relevance. Optionally, add an explanation of your ranking to help other evaluators understand your reasoning."}
+        #     # TODO: add additional step for validity testing of each hypothesis/claim?
+        #     for evaluator in self.evaluators:
+        #         evaluator.observe(ad)
+        #         evaluator.observe(prompt)
+        #         # TODO: break this up. evluate one hypothesis at a time.
+        #         evaluator.observe(self.entail_0)
+        #         evaluator.observe(self.entail_1)
+        #     self.ent_rate_0 = self.evaluator_0.act()
+        #     self.ent_rate_1 = self.evaluator_1.act()
+
+        #     for evaluator in self.evaluators:
+        #         evaluator.observe(self.contradict_0)
+        #         evaluator.observe(self.contradict_1)
+        #     self.cont_rate_0 = self.evaluator_0.act()
+        #     self.cont_rate_1 = self.evaluator_1.act()
+
+        #     for evaluator in self.evaluators:
+        #         evaluator.observe(self.neutral_0)
+        #         evaluator.observe(self.neutral_1)
+        #     self.neut_rate_0 = self.evaluator_0.act()
+        #     self.neut_rate_1 = self.evaluator_1.act()
+
+        #     # Provide feedback to evaluators and writers
+        #     if self.ent_rate_0 == self.ent_rate_1:
+        #         feedback = {'id': 'System', 'text': "You agreed with the other evaluator on the ranking for the Definitely Correct examples"}
+
+        #     self.episodeDone = True
 
     def episode_done(self):
         return self.episodeDone
