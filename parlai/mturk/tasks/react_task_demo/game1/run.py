@@ -33,7 +33,7 @@ def main():
     opt.update(task_config)
 
     # Select an agent_id that worker agents will be assigned in their world
-    mturk_agent_roles = ['Writer-0', 'Writer-1', 'Evaluator-0', 'Evaluator-1']
+    mturk_agent_roles = ['Writer-0', 'Writer-1']#, 'Evaluator-0', 'Evaluator-1']
 
     # Instantiate an MTurkManager with the given options and a maximum number
     # of agents per world of 1 (based on the length of mturk_agent_ids)
