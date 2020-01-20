@@ -15,7 +15,6 @@ import {
   FormGroup } from 'react-bootstrap';
 import $ from 'jquery';
 
-// Create custom components
 class EvaluatorIdleResponse extends React.Component {
   render() {
     // TODO maybe move to CSS?
@@ -34,7 +33,32 @@ class EvaluatorIdleResponse extends React.Component {
         style={pane_style}
       >
         <span>
-          Pay attention to the conversation above, as you'll need to evaluate.
+          The writers are composing their claims right now.
+        </span>
+      </div>
+    );
+  }
+}
+
+class WriterIdleResponse extends React.Component {
+  render() {
+    // TODO maybe move to CSS?
+    let pane_style = {
+      paddingLeft: '25px',
+      paddingTop: '20px',
+      paddingBottom: '20px',
+      paddingRight: '25px',
+      float: 'left',
+    };
+
+    return (
+      <div
+        id="response-type-idle"
+        className="response-type-module"
+        style={pane_style}
+      >
+        <span>
+          The evaluators are ranking your claims right now.
         </span>
       </div>
     );
@@ -232,6 +256,12 @@ class EvaluationResponse extends React.Component {
     }
   }
 
+  _showMessage = (bool) => {
+    this.setState({
+      showMessage: bool
+    });
+  }
+
   render() {
     // TODO maybe move to CSS?
     let pane_style = {
@@ -257,29 +287,57 @@ class EvaluationResponse extends React.Component {
       padding: '0px',
     };
 
-    let reject_button = (
+    let reject_button1 = (
       <Button
         className="btn btn-danger"
         style={submit_style}
-        id="id_reject_chat_button"
+        id="id_reject_claim1_button"
         disabled={!this.props.active || this.state.sending}
-        onClick={() => this.tryMessageSend('invalid')}
+        onClick={this._showMessage.bind(null, false)}
       >
-        Reject
+        Invalid
       </Button>
     );
+    // onClick={() => this.tryMessageSend('invalid')}
 
-    let approve_button = (
+    let approve_button1 = (
       <Button
         className="btn btn-success"
         style={submit_style}
-        id="id_approve_chat_button"
+        id="id_approve_claim1_button"
         disabled={!this.props.active || this.state.sending}
-        onClick={() => this.tryMessageSend('approve')}
+        onClick={this._showMessage.bind(null, false)}
       >
         Approve
       </Button>
     );
+    //onClick={this._showMessage.bind(null, false)}
+
+    let reject_button2 = (
+      <Button
+        className="btn btn-danger"
+        style={submit_style}
+        id="id_reject_claim1_button"
+        disabled={!this.props.active || this.state.sending}
+        onClick={this._showMessage.bind(null, true)}
+      >
+        Invalid
+      </Button>
+    );
+    // onClick={() => this.tryMessageSend('invalid')}
+
+    let approve_button2 = (
+      <Button
+        className="btn btn-success"
+        style={submit_style}
+        id="id_approve_claim1_button"
+        disabled={!this.props.active || this.state.sending}
+        onClick={this._showMessage.bind(null, true)}
+      >
+        Approve
+      </Button>
+    );
+    //onClick={this._showMessage.bind(null, false)}
 
     let text_rank1 = "Which claim do you think is better?" ;
     let rank1 = (
@@ -300,25 +358,25 @@ class EvaluationResponse extends React.Component {
       </div>
     );
 
-    // TODO: remove this in the 2 writer setting. redundant.
-    let text_rank2 = "Which claim do you think is worse?" ;
-    let rank2 = (
-      <div>
-        <ControlLabel> {text_rank2} </ControlLabel>
-        <FormGroup>
-          <Radio
-            name="groupOptions2"
-          >
-            Claim 1
-          </Radio>
-          <Radio
-            name="groupOptions2"
-          >
-            Claim 2
-          </Radio>
-        </FormGroup>
-      </div>
-    );
+    // // TODO: remove this in the 2 writer setting. redundant.
+    // let text_rank2 = "Which claim do you think is worse?" ;
+    // let rank2 = (
+    //   <div>
+    //     <ControlLabel> {text_rank2} </ControlLabel>
+    //     <FormGroup>
+    //       <Radio
+    //         name="groupOptions2"
+    //       >
+    //         Claim 1
+    //       </Radio>
+    //       <Radio
+    //         name="groupOptions2"
+    //       >
+    //         Claim 2
+    //       </Radio>
+    //     </FormGroup>
+    //   </div>
+    // );
 
     
     let text_reasoning =
@@ -352,16 +410,19 @@ class EvaluationResponse extends React.Component {
         style={pane_style}
       >
         <div style={input_style}>
-          {reject_button}
-          {approve_button}
+          <div>Claims 1: {approve_button1} {reject_button1}</div>
+          <div>Claims 2: {approve_button2} {reject_button2}</div>
         </div>
+        { this.state.showMessage && (<div style={input_style}>{rank1}</div>) }
         <div style={input_style}>
-          {rank1}
-        </div>
-        <div style={input_style}>
-          {rank2}
-        </div>
         {text_reason}
+        </div>
+        // <div style={input_style}>
+        //   {rank1}
+        // </div>
+        // <div style={input_style}>
+        //   {rank2}
+        // </div>
       </div>
     );
   }
@@ -371,14 +432,15 @@ class EvaluationResponse extends React.Component {
 var IdleResponseHolder = {
   // default: leave blank to use original default when no ids match
   Evaluator: EvaluatorIdleResponse,
+  Writer: WriterIdleResponse,
 };
 
 var TextResponseHolder = {
   // default: leave blank to use original default when no ids match
   Evaluator: EvaluationResponse,
   'Onboarding Evaluator': EvaluationResponse,
-  Answerer: NumericResponse,
-  'Onboarding Answerer': NumericResponse,
+  Writer: NumericResponse,
+  'Onboarding Writer': NumericResponse,
 };
 
 export default {
