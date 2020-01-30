@@ -275,15 +275,15 @@ class SocketManager:
         try:
             with self.send_lock:
                 self.ws.send(data)
-        except websocket.WebSocketConnectionClosedException:
-            # The channel died mid-send, wait for it to come back up
-            return False
-        except BrokenPipeError:  # noqa F821 we don't support p2
-            # The channel died mid-send, wait for it to come back up
-            return False
-        except AttributeError:
-            # _ensure_closed was called in parallel, self.ws = None
-            return False
+        # except websocket.WebSocketConnectionClosedException:
+        #     # The channel died mid-send, wait for it to come back up
+        #     return False
+        # except BrokenPipeError:  # noqa F821 we don't support p2
+        #     # The channel died mid-send, wait for it to come back up
+        #     return False
+        # except AttributeError:
+        #     # _ensure_closed was called in parallel, self.ws = None
+        #     return False
         except Exception as e:
             shared_utils.print_and_log(
                 logging.WARN,
@@ -512,6 +512,7 @@ class SocketManager:
                 self.processed_packets.add(packet_id)
 
         def run_socket(*args):
+            # print(self.server_url)
             url_base_name = self.server_url.split('https://')[1]
             protocol = "wss"
             if url_base_name in ['localhost', '127.0.0.1']:
