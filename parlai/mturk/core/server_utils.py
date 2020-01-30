@@ -19,6 +19,9 @@ import parlai.mturk.core.shared_utils as shared_utils
 
 region_name = 'us-east-1'
 user_name = getpass.getuser()
+# Strip perdiods from user name since heroku ignores them
+user_name = user_name.replace(".", "")
+
 
 parent_dir = shared_utils.get_core_dir()
 legacy_server_source_directory_name = 'server_legacy'
