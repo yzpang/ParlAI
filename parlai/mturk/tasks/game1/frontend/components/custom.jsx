@@ -8,12 +8,17 @@
 
 import React from 'react';
 import { 
+  Form,
   FormControl, 
   Button, 
   Radio,
   ControlLabel,
-  FormGroup } from 'react-bootstrap';
+  FormGroup,
+  FormLabel } from 'react-bootstrap';
+import Slider from 'rc-slider';
+import { getCorrectComponent } from "./core_components.jsx";
 import $ from 'jquery';
+
 
 class EvaluatorIdleResponse extends React.Component {
   render() {
@@ -65,11 +70,28 @@ class WriterIdleResponse extends React.Component {
   }
 }
 
-class NumericResponse extends React.Component {
+class WriterResponse extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { textval: '', sending: false };
+    this.state = {
+      entailText: '',
+      contradictText: '',
+      neutralText: '',
+      taskData: [],
+      sending: false};
+    this.handleInputChange = this.handleInputChange.bind(this);
+    // this.handleEnterKey = this.handleEnterKey.bind(this);
   }
+
+  // constructor(props) {
+  //   super(props);
+  //   this.state = { 
+  //     textval: '',
+  //     entailText: '',
+  //     contradictText: '',
+  //     neutralText: '',
+  //     sending: false };
+  // }
 
   componentDidUpdate(prevProps, prevState, snapshot) {
     // Only change in the active status of this component should cause a
@@ -82,10 +104,10 @@ class NumericResponse extends React.Component {
   }
 
   tryMessageSend() {
-    if (this.state.textval != '' && this.props.active && !this.state.sending) {
+    if (this.state.entailText != '' && this.state.contradictText != '' && this.state.neutralText != '' && this.props.active && !this.state.sending) {
       this.setState({ sending: true });
-      this.props.onMessageSend(this.state.textval, {}, () =>
-        this.setState({ textval: '', sending: false })
+      this.props.onMessageSend(this.state.entailText, this.state.contradictText , this.state.neutralText, {}, () =>
+        this.setState({ entailText: '', contradictText: '', neutralText: '', sending: false })
       );
     }
   }
@@ -98,12 +120,42 @@ class NumericResponse extends React.Component {
     }
   }
 
+  // checkValidData() {
+  //   console.log(this.state);
+  //   if (this.state.entailText !== "") {
+  //     let response_data = {
+  //       entailText: this.state.entailText,
+  //     };
+  //     this.props.onValidDataChange(true, response_data);
+  //     return;
+  //   }
+  //   this.props.onValidDataChange(false, {});
+  // }
+
+  // handleInputChange(event) {
+  //   console.log(event);
+  //   let target = event.target;
+  //   let value = target.value;
+  //   let name = target.name;
+
+  //   this.setState({ [name]: value }, this.checkValidData);
+  // }
+
+  handleInputChange(event) {
+    console.log(event)
+    let target = event.target;
+    let value = target.value;
+    let name = target.name;
+
+    this.setState({ [name]: value });
+  }
+
   updateValue(amount) {
     if ((amount != '' && isNaN(amount)) || amount < 0) {
       return;
     }
     amount = amount == '' ? 0 : amount;
-    this.setState({ textval: '' + amount });
+    this.setState({ entailText: '' + amount });
   }
 
   render() {
@@ -141,21 +193,24 @@ class NumericResponse extends React.Component {
         <ControlLabel>{text_entail}</ControlLabel>
         <FormControl
           type="text"
-          id="id_text_input"
+          id="id_text_input0"
+          name="entailText"
           style={{
             width: '80%',
             height: '100%',
             float: 'left',
             fontSize: '16px',
           }}
-          value={this.state.textval}
+          value={this.state.entailText}
           placeholder="Please enter you claim here..."
           onKeyPress={e => this.handleKeyPress(e)}
-          onChange={e => this.updateValue(e.target.value)}
+          onChange={this.handleInputChange}
           disabled={!this.props.active || this.state.sending}
         />
       </div>
     );
+
+    // onChange={e => this.updateValue(e.target.value)}
 
     let text_contradict = (
       <div>
@@ -167,17 +222,18 @@ class NumericResponse extends React.Component {
         <ControlLabel>{text_contradict}</ControlLabel>
         <FormControl
           type="text"
-          id="id_text_input"
+          id="id_text_input1"
+          name="contradictText"
           style={{
             width: '80%',
             height: '100%',
             float: 'left',
             fontSize: '16px',
           }}
-          value={this.state.textval}
+          value={this.state.contradictText}
           placeholder="Please enter you claim here..."
           onKeyPress={e => this.handleKeyPress(e)}
-          onChange={e => this.updateValue(e.target.value)}
+          onChange={this.handleInputChange}
           disabled={!this.props.active || this.state.sending}
         />
       </div>
@@ -193,21 +249,67 @@ class NumericResponse extends React.Component {
         <ControlLabel>{text_neutral}</ControlLabel>
         <FormControl
           type="text"
-          id="id_text_input"
+          id="id_text_input2"
+          name="neutralText"
           style={{
             width: '80%',
             height: '100%',
             float: 'left',
             fontSize: '16px',
           }}
-          value={this.state.textval}
+          value={this.state.neutralText}
           placeholder="Please enter you claim here..."
           onKeyPress={e => this.handleKeyPress(e)}
-          onChange={e => this.updateValue(e.target.value)}
+          onChange={this.handleInputChange}
           disabled={!this.props.active || this.state.sending}
         />
       </div>
     );
+
+    // let text_input = (
+    //   <FormControl
+    //     type="text"
+    //     id="id_text_input"
+    //     style={{
+    //       width: '80%',
+    //       height: '100%',
+    //       float: 'left',
+    //       fontSize: '16px',
+    //     }}
+    //     value={this.state.textval}
+    //     placeholder="Please enter here..."
+    //     onKeyPress={e => this.handleKeyPress(e)}
+    //     onChange={e => this.updateValue(e.target.value)}
+    //     disabled={!this.props.active || this.state.sending}
+    //   />
+    // );
+
+    // let hypotheses = (
+    //   <div>
+    //     <Form>
+    //       <FormGroup controlId="entailText">
+    //         <FormLabel>Please write a claim that is <b> Definitely Correct </b> about the situation or event in the prompt.</FormLabel>
+    //         <FormControl type="text" 
+    //         placeholder="Please write your claim here..." 
+    //         onChange={this.handleInputChange}/>
+    //       </FormGroup>
+
+    //       <FormGroup controlId="contradictText">
+    //         <FormLabel>Please write a claim that is <b> Definitely Incorrect </b> about the situation or event in the prompt.</FormLabel>
+    //         <FormControl type="text" 
+    //         placeholder="Please write your claim here..." 
+    //         onChange={this.handleInputChange}/>
+    //       </FormGroup>
+          
+    //       <FormGroup controlId="neutralText">
+    //         <FormLabel>Please write a claim that is <b> Neither </b> definitely correct nor definitely incorrect about the situation or event in the prompt.</FormLabel>
+    //         <FormControl type="text" 
+    //         placeholder="Please write your claim here..." 
+    //         onChange={this.handleInputChange}/>
+    //       </FormGroup>
+    //     </Form>
+    //   </div>
+    // );
 
     // TODO attach send message callback
     let submit_button = (
@@ -216,7 +318,7 @@ class NumericResponse extends React.Component {
         style={submit_style}
         id="id_send_msg_button"
         disabled={
-          this.state.textval == '' || !this.props.active || this.state.sending
+          this.state.entailText == '' || this.state.contradictText == '' || this.state.neutralText == '' || !this.props.active || this.state.sending
         }
         onClick={() => this.tryMessageSend()}
       >
@@ -231,17 +333,17 @@ class NumericResponse extends React.Component {
         style={pane_style}
       >
         <div style={input_style}>
-          {entail_input}
-          {contradict_input}
-          {neutral_input}
-          {submit_button}
+        {entail_input}
+        {contradict_input}
+        {neutral_input}
+        {submit_button}
         </div>
       </div>
     );
   }
 }
 
-class EvaluationResponse extends React.Component {
+class EvaluatorResponse extends React.Component {
   constructor(props) {
     super(props);
     this.state = { textval: '', sending: false };
@@ -428,7 +530,123 @@ class EvaluationResponse extends React.Component {
   }
 }
 
-// Package components
+class ResponsePaneWriter extends React.Component {
+  render() {
+    let v_id = this.props.v_id;
+    let XDoneResponse = getCorrectComponent("XDoneResponse", v_id);
+    let XFormResponse = getCorrectComponent('XFormResponse', v_id);
+    // let XWriterResponse = getCorrectComponent("XWriterResponse", v_id);
+
+    // let response_pane = null;
+    // switch (this.props.task_state) {
+    //   case "done":
+    //     response_pane = <XDoneResponse {...this.props} />;
+    //     break;
+    //   default:
+    //     response_pane = <WriterResponse {...this.props} />;
+    //     break;
+    // }
+
+    let response_pane = null;
+    switch (this.props.chat_state) {
+      case 'done':
+      case 'inactive':
+        response_pane = <XDoneResponse {...this.props} />;
+        break;
+      case 'text_input':
+      case 'waiting':
+        if (this.props.task_data && this.props.task_data['respond_with_form']) {
+          response_pane = (
+            <WriterResponse
+              {...this.props}
+              active={this.props.chat_state == 'text_input'}
+            />
+          );
+        } else {
+          response_pane = (
+            <WriterResponse
+              {...this.props}
+              active={this.props.chat_state == 'text_input'}
+            />
+          );
+        }
+        break;
+      case 'idle':
+      default:
+        response_pane = <WriterIdleResponse {...this.props} />;
+        break;
+    }
+
+    return (
+      <div
+        id="right-bottom-pane"
+        style={{ width: "100%", backgroundColor: "#eee" }}
+      >
+        {response_pane}
+      </div>
+    );
+  }
+}
+
+class ResponsePaneyEvaluator extends React.Component {
+  render() {
+    let v_id = this.props.v_id;
+    let XDoneResponse = getCorrectComponent("XDoneResponse", v_id);
+    let XFormResponse = getCorrectComponent('XFormResponse', v_id);
+    // let XWriterResponse = getCorrectComponent("XWriterResponse", v_id);
+
+    // let response_pane = null;
+    // switch (this.props.task_state) {
+    //   case "done":
+    //     response_pane = <XDoneResponse {...this.props} />;
+    //     break;
+    //   default:
+    //     response_pane = <WriterResponse {...this.props} />;
+    //     break;
+    // }
+
+    let response_pane = null;
+    switch (this.props.chat_state) {
+      case 'done':
+      case 'inactive':
+        response_pane = <XDoneResponse {...this.props} />;
+        break;
+      case 'text_input':
+      case 'waiting':
+        if (this.props.task_data && this.props.task_data['respond_with_form']) {
+          response_pane = (
+            <EvaluatorResponse
+              {...this.props}
+              active={this.props.chat_state == 'text_input'}
+            />
+          );
+        } else {
+          response_pane = (
+            <EvaluatorResponse
+              {...this.props}
+              active={this.props.chat_state == 'text_input'}
+            />
+          );
+        }
+        break;
+      case 'idle':
+      default:
+        response_pane = <EvaluatorIdleResponse {...this.props} />;
+        break;
+    }
+
+    return (
+      <div
+        id="right-bottom-pane"
+        style={{ width: "100%", backgroundColor: "#eee" }}
+      >
+        {response_pane}
+      </div>
+    );
+  }
+}
+
+
 var IdleResponseHolder = {
   // default: leave blank to use original default when no ids match
   Evaluator: EvaluatorIdleResponse,
@@ -437,14 +655,22 @@ var IdleResponseHolder = {
 
 var TextResponseHolder = {
   // default: leave blank to use original default when no ids match
-  Evaluator: EvaluationResponse,
-  'Onboarding Evaluator': EvaluationResponse,
-  Writer: NumericResponse,
-  'Onboarding Writer': NumericResponse,
+  Evaluator: EvaluatorResponse,
+  'Onboarding Evaluator': EvaluatorResponse,
+  Writer: WriterResponse,
+  'Onboarding Writer': WriterResponse,
+};
+
+var ResponsePaneHolder = {
+  // default: leave blank to use original default when no ids match
+  Writer: ResponsePaneWriter,
+  Evaluator: ResponsePaneyEvaluator,
 };
 
 export default {
   // ComponentName: CustomReplacementComponentMap
-  XTextResponse: TextResponseHolder,
-  XIdleResponse: IdleResponseHolder,
+  XResponsePane:  ResponsePaneHolder,
 };
+// XTextResponse: { default: TextResponseHolder},
+// XIdleResponse: { default: IdleResponseHolder},
+// XResponsePane: { default: ResponsePaneyy }

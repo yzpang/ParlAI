@@ -5,7 +5,7 @@
 # LICENSE file in the root directory of this source tree.
 from parlai.mturk.core.worlds import MTurkOnboardWorld, MTurkTaskWorld
 import threading
-
+from parlai.mturk.core.agents import AssignState
 
 class WriterOnboardingWorld(MTurkOnboardWorld):
     """Example onboarding world. Sends a message from the world to the
@@ -22,7 +22,7 @@ class WriterOnboardingWorld(MTurkOnboardWorld):
             "in relation with this prompt."
         )
         self.mturk_agent.observe(ad)
-        self.mturk_agent.act()
+        # self.mturk_agent.act()
         self.episodeDone = True
 
 
@@ -40,7 +40,7 @@ class EvaluatorOnboardingWorld(MTurkOnboardWorld):
             "rank the claims based on creativity, complexity, and relevance."
         )
         self.mturk_agent.observe(ad)
-        self.mturk_agent.act()
+        # self.mturk_agent.act()
         self.episodeDone = True
 
 
@@ -60,13 +60,14 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                 # TODO: make number of writers a variable
                 self.writer_0 = agent
             elif agent.demo_role == 'Writer-1':
-                self.writers_1 = agent
+                self.writer_1 = agent
             elif agent.demo_role == 'Evaluator-0':
-                self.evaluators_0 = agent
+                self.evaluator_0 = agent
             else:  # 'Evaluator'
                 self.evaluator_1 = agent
+        # import pdb; pdb.set_trace()
         self.writers = [self.writer_0, self.writer_1]
-        self.evaluators = [self.evaluator_0, self.evaluator_1]
+        self.evaluators = [self.evaluator_0]#, self.evaluator_1]
         self.episodeDone = False
         self.turns = 0
         
@@ -82,97 +83,77 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
 
     def parley(self):
         prompt = {
-                'id': 'System',
-                'text': "Prompt: " + "This is a placeholder prompt"
+                'id': 'Prompt',
+                'text': "This is a placeholder prompt"
             }
 
         if self.turns == 0:
-            # NLI writing
-            # entail = {
-            #     'id': 'System',
-            #     'text': "Please write a claim that is definitely true given the prompt."
-            # }
-            # contradict = {
-            #     'id': 'System',
-            #     'text': "Please write a claim that is definitely false given the prompt."
-            # }
-            # neutral = {
-            #     'id': 'System',
-            #     'text': "Please write a claim that is neither definitely true nor definitely false given the prompt."
-            # }
+            # Hypothesis writing
 
             # TODO: fix below to be better code. all in single for loop.
-            for writer in self.writers:
-                writer.observe(prompt) 
-                writer.observe(entail)
-
-            # self.entail_0 = self.writer_0.act()
-            # self.entail_1 = self.writer_1.act()
-
-            # for writer in self.writers:
-            #     writer.observe(contradict)
-            # self.contradict_0 = self.writer_0.act()
-            # self.contradict_1 = self.writer_1.act()
-
-            # for writer in self.writers:
-            #     writer.observe(neutral)
-            # self.neutral_0 = self.writer_0.act()
-            # self.neutral_1 = self.writer_1.act()
+            for agent in self.mturk_agents:
+                agent.observe(prompt)
+            for evaluator in self.evaluators:
+                evaluator.observe({'id': 'Dear ranker', 'text': 'Please wait while the writers compose their claims.'})
 
             self.hypotheses_0 = self.writer_0.act()
-            self.hypotheses_1 = self.writer_0.act()
+            self.hypotheses_1 = self.writer_1.act()
 
             self.turns += 1
 
-        if self.turns == 1:
-            ad = {'id': 'System', 'text': 'Testing printing claims'}
-            self.writer_0.observe(self.hypothesis_1)
-            print(self.hypothesis_1)
-            import pdb; pdb.set_trace()
-            self.episodeDone = True
+        # if self.turns == 1:
+        #     ad = {'id': 'System', 'text': 'Testing printing claims'}
+        #     writer1_entail = {'text': 'Entail: ' + self.hypotheses_1['text']}
+        #     writer1_contradict = {'text': 'Contradict: ' + self.hypotheses_1['task_data']}
+        #     self.writer_0.observe(writer1_entail)
+        #     self.writer_0.observe(writer1_contradict)
+        #     print(self.hypotheses_1)
+        #     import pdb; pdb.set_trace()
+        #     self.episodeDone = True
 
-        """
+
         if self.turns == 1:
             ad = {'id': 'System', 'text': "Given the prompt and label, please decide if the claim is appropriate, mark it as Invalid if the claim doesn't fit the label or is completely unrelated to the prompt. Then rank the claims."}
-            label = {'id': 'System', 'text': "Label: Definitely correct"}
-
-            ent01 = {'id': 'System', 'text': "Claim 1: " + self.entail_0 + "\n Claim 2: " + self.entail_1}
-            ent10 = {'id': 'System', 'text': "Claim 1: " + self.entail_1 + "\n Claim 2: " + self.entail_0}
 
             # rankthem = {'id': 'System', 'text': "Now, given the prompt and label, please rank the claims based on creativity, complexity, and relevance. Optionally, add an explanation of your ranking to help other evaluators understand your reasoning."}
 
             # Provide feedback to evaluators
             self.agreed = None
-            if self.agreed = 1:
+            if self.agreed == 1:
                 feedback = {'id': 'System', 'text': "You agreed with the other evaluator on the ranking for the Definitely Correct examples. Bonus = $0.5"}
             else:
                 feedback = {'id': 'System', 'text': "You disagreed with the other evaluator on the ranking for the Definitely Correct examples."}
 
+
+            writer0_entail = {'text': 'Definitely correct: ' + self.hypotheses_0['text']}
+            writer0_contradict = {'text': 'Definitely incorrect: ' + self.hypotheses_0['task_data']}
+            writer0_neutral = {'text': 'Neither: ' + self.hypotheses_0['task_data2']}
+
+            writer1_entail = {'text': 'Definitely correct: ' + self.hypotheses_1['text']}
+            writer1_contradict = {'text': 'Definitely incorrect: ' + self.hypotheses_1['task_data']}
+            writer1_neutral = {'text': 'Neither: ' + self.hypotheses_1['task_data2']}
+
+
             for evaluator in self.evaluators:
                 evaluator.observe(ad)
                 evaluator.observe(prompt)
-                evaluator.observe(label)
+                evluator.observe({'text':'The claims are,'})
+                evaluator.observe(writer0_entail)
+                evaluator.observe(writer1_entail)
                 # TODO: break this up. evluate one hypothesis at a time.
-            #  self.evaluators = [self.evaluator_0, self.evaluator_1]
-                coin = random.randint(0, 1)
-                if coin == 0:
-                    evaluator.observe(ent01)
-                else:
-                    evaluator.observe(ent10)
-
-            # self.ent_acc_0 = self.evaluator_0.act()
-            # self.ent_acc_1 = self.evaluator_1.act()
-            # for evaluator in self.evaluators:
-            #     evaluator.observe(rankthem)
-            # self.ent_rate_0 = self.evaluator_0.act()
-            # self.ent_rate_1 = self.evaluator_1.act()
+                # coin = random.randint(0, 1)
+                # if coin == 0:
+                #     evaluator.observe(ent01)
+                # else:
+                #     evaluator.observe(ent10)
 
             self.eval_0_ent = self.evaluator_0.act()
             self.eval_1_ent = self.evaluator_1.act()
 
             self.turns += 1
+            self.episodeDone = True
 
-
+        """
         if self.turns == 2:
             label = {'id': 'System', 'text': "Label: Definitely incorrect"}
 
@@ -209,6 +190,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
             #     evaluator.observe(feedback)
 
             self.turns += 1
+            self.episodeDone = True
 
         if self.turns == 3:
             label = {'id': 'System', 'text': "Label: Neither definitely correct nor definitely incorrect"}
@@ -247,6 +229,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
 
             self.episodeDone = True
         """
+
 
     def episode_done(self):
         return self.episodeDone
