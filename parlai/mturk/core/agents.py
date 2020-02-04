@@ -405,6 +405,7 @@ class MTurkAgent(Agent):
         """
         if not blocking:
             # if this is the first act since last sent message start timing
+            # import pdb; pdb.set_trace()
             if self.message_request_time is None:
                 self.request_message()
                 self.message_request_time = time.time()

@@ -56,18 +56,18 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
     def __init__(self, opt, mturk_agents):
         self.mturk_agents = mturk_agents
         for agent in mturk_agents:
-            if agent.demo_role == 'Writer-0':
+            if agent.demo_role == 'Writer0':
                 # TODO: make number of writers a variable
                 self.writer_0 = agent
-            elif agent.demo_role == 'Writer-1':
+            elif agent.demo_role == 'Writer1':
                 self.writer_1 = agent
-            elif agent.demo_role == 'Evaluator-0':
+            elif agent.demo_role == 'Evaluator0':
                 self.evaluator_0 = agent
             else:  # 'Evaluator'
                 self.evaluator_1 = agent
         # import pdb; pdb.set_trace()
         self.writers = [self.writer_0, self.writer_1]
-        self.evaluators = [self.evaluator_0]#, self.evaluator_1]
+        self.evaluators = [self.evaluator_0, self.evaluator_1]
         self.episodeDone = False
         self.turns = 0
         
@@ -84,7 +84,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
     def parley(self):
         prompt = {
                 'id': 'Prompt',
-                'text': "This is a placeholder prompt"
+                'text': "Norman architecture typically stands out as a new stage in the architectural history of the regions they subdued. They spread a unique Romanesque idiom to England and Italy, and the encastellation of these regions with keeps in their north French style fundamentally altered the military landscape. Their style was characterised by rounded arches, particularly over windows and doorways, and massive proportions.'}, {'qas': [{'question': 'What architecture type came after Norman in England?"
             }
 
         if self.turns == 0:
@@ -93,8 +93,8 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
             # TODO: fix below to be better code. all in single for loop.
             for agent in self.mturk_agents:
                 agent.observe(prompt)
-            for evaluator in self.evaluators:
-                evaluator.observe({'id': 'Dear ranker', 'text': 'Please wait while the writers compose their claims.'})
+            # for evaluator in self.evaluators:
+            #     evaluator.observe({'id': 'Dear ranker', 'text': 'Please wait while the writers compose their claims.'})
 
             self.hypotheses_0 = self.writer_0.act()
             self.hypotheses_1 = self.writer_1.act()
@@ -125,21 +125,65 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                 feedback = {'id': 'System', 'text': "You disagreed with the other evaluator on the ranking for the Definitely Correct examples."}
 
 
-            writer0_entail = {'text': 'Definitely correct: ' + self.hypotheses_0['text']}
-            writer0_contradict = {'text': 'Definitely incorrect: ' + self.hypotheses_0['task_data']}
-            writer0_neutral = {'text': 'Neither: ' + self.hypotheses_0['task_data2']}
+            writer0_entail = {'id':'Claim 1', 'text': self.hypotheses_0['text']}
+            writer0_contradict = {'id':'Claim 1','text': self.hypotheses_0['task_data']}
+            writer0_neutral = {'id':'Claim 1','text': self.hypotheses_0['task_data2']}
 
-            writer1_entail = {'text': 'Definitely correct: ' + self.hypotheses_1['text']}
-            writer1_contradict = {'text': 'Definitely incorrect: ' + self.hypotheses_1['task_data']}
-            writer1_neutral = {'text': 'Neither: ' + self.hypotheses_1['task_data2']}
+            writer1_entail = {'id':'Claim 2','text':  self.hypotheses_1['text']}
+            writer1_contradict = {'id':'Claim 2','text':  self.hypotheses_1['task_data']}
+            writer1_neutral = {'id':'Claim 2','text': self.hypotheses_1['task_data2']}
 
 
             for evaluator in self.evaluators:
-                evaluator.observe(ad)
-                evaluator.observe(prompt)
-                evluator.observe({'text':'The claims are,'})
+                # evaluator.observe(ad)
+                # evaluator.observe(prompt)
+                evaluator.observe({'id':'Label', 'text':'Definitely correct'})
                 evaluator.observe(writer0_entail)
                 evaluator.observe(writer1_entail)
+                # TODO: break this up. evluate one hypothesis at a time.
+                # coin = random.randint(0, 1)
+                # if coin == 0:
+                #     evaluator.observe(ent01)
+                # else:
+                #     evaluator.observe(ent10)
+
+            self.eval_0_ent = self.evaluator_0.act(blocking=False)
+            self.eval_1_ent = self.evaluator_1.act(blocking=False)
+
+            if self.eval_0_ent['text'] == self.eval_1_ent['text']:
+                for evaluator in self.evaluators:
+                    evaluator.observe({'id':'Agreement', 'text':'You agreed! Bonus'})
+                    
+            self.turns += 1
+
+        if self.turns == 2:
+            ad = {'id': 'System', 'text': "Given the prompt and label, please decide if the claim is appropriate, mark it as Invalid if the claim doesn't fit the label or is completely unrelated to the prompt. Then rank the claims."}
+
+            # rankthem = {'id': 'System', 'text': "Now, given the prompt and label, please rank the claims based on creativity, complexity, and relevance. Optionally, add an explanation of your ranking to help other evaluators understand your reasoning."}
+
+            # Provide feedback to evaluators
+            self.agreed = None
+            if self.agreed == 1:
+                feedback = {'id': 'System', 'text': "You agreed with the other evaluator on the ranking for the Definitely Correct examples. Bonus = $0.5"}
+            else:
+                feedback = {'id': 'System', 'text': "You disagreed with the other evaluator on the ranking for the Definitely Correct examples."}
+
+
+            writer0_entail = {'id':'Claim 1', 'text': self.hypotheses_0['text']}
+            writer0_contradict = {'id':'Claim 1','text': self.hypotheses_0['task_data']}
+            writer0_neutral = {'id':'Claim 1','text': self.hypotheses_0['task_data2']}
+
+            writer1_entail = {'id':'Claim 2','text':  self.hypotheses_1['text']}
+            writer1_contradict = {'id':'Claim 2','text':  self.hypotheses_1['task_data']}
+            writer1_neutral = {'id':'Claim 2','text': self.hypotheses_1['task_data2']}
+
+
+            for evaluator in self.evaluators:
+                # evaluator.observe(ad)
+                # evaluator.observe(prompt)
+                evaluator.observe({'id':'Label', 'text':'Definitely incorrect'})
+                evaluator.observe(writer0_contradict)
+                evaluator.observe(writer1_contradict)
                 # TODO: break this up. evluate one hypothesis at a time.
                 # coin = random.randint(0, 1)
                 # if coin == 0:
@@ -150,85 +194,13 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
             self.eval_0_ent = self.evaluator_0.act()
             self.eval_1_ent = self.evaluator_1.act()
 
-            self.turns += 1
+            if self.eval_0_ent['text'] == self.eval_1_ent['text']:
+                for evaluator in self.evaluators:
+                    evaluator.observe({'id':'Agreement', 'text':'You agreed! Bonus'})
+
+            import pdb; pdb.set_trace()
+            # self.turns += 1
             self.episodeDone = True
-
-        """
-        if self.turns == 2:
-            label = {'id': 'System', 'text': "Label: Definitely incorrect"}
-
-            cont01 = {'id': 'System', 'text': "Claim 1: " + self.contradict_0 + "\n Claim 2: " + self.contradict_1}
-            cont10 = {'id': 'System', 'text': "Claim 1: " + self.contradict_1 + "\n Claim 2: " + self.contradict_0}
-
-            # Provide feedback to evaluators
-            self.agreed = None
-            if self.agreed = 1:
-                feedback = {'id': 'System', 'text': "You agreed with the other evaluator on the ranking for the Definitely Correct examples. Bonus = $0.5"}
-            else:
-                feedback = {'id': 'System', 'text': "You disagreed with the other evaluator on the ranking for the Definitely Correct examples."}
-
-            # rankthem = {'id': 'System', 'text': "Now, given the prompt and label, please rank the claims based on creativity, complexity, and relevance. Optionally, add an explanation of your ranking to help other evaluators understand your reasoning."}
-
-            for evaluator in self.evaluators:
-                evaluator.observe(prompt)
-                evaluator.observe(label)
-                coin = random.randint(0, 1)
-                if coin == 0:
-                    evaluator.observe(cont01)
-                else:
-                    evaluator.observe(cont10)
-
-            self.eval_0_cont = self.evaluator_0.act()
-            self.eval_1_cont = self.evaluator_1.act()
-
-            # TODO: get the relevant actions here. Need agreement and reasoning if not None.
-            # if self.ent_rate_0 == self.ent_rate_1:
-            #     self.agreed = 1
-            # else:
-            #     self.agreed = 0
-            # for evaluator in self.evaluators:
-            #     evaluator.observe(feedback)
-
-            self.turns += 1
-            self.episodeDone = True
-
-        if self.turns == 3:
-            label = {'id': 'System', 'text': "Label: Neither definitely correct nor definitely incorrect"}
-
-            neu01 = {'id': 'System', 'text': "Claim 1: " + self.neutral_0 + "\n Claim 2: " + self.neutral_1}
-            neut10 = {'id': 'System', 'text': "Claim 1: " + self.neutral_1 + "\n Claim 2: " + self.neutral_0}
-
-            # Provide feedback to evaluators
-            self.agreed = None
-            if self.agreed = 1:
-                feedback = {'id': 'System', 'text': "You agreed with the other evaluator on the ranking for the Definitely Correct examples. Bonus = $0.5"}
-            else:
-                feedback = {'id': 'System', 'text': "You disagreed with the other evaluator on the ranking for the Definitely Correct examples."}
-
-            # rankthem = {'id': 'System', 'text': "Now, given the prompt and label, please rank the claims based on creativity, complexity, and relevance. Optionally, add an explanation of your ranking to help other evaluators understand your reasoning."}
-
-            for evaluator in self.evaluators:
-                evaluator.observe(prompt)
-                evaluator.observe(label)
-                coin = random.randint(0, 1)
-                if coin == 0:
-                    evaluator.observe(neut01)
-                else:
-                    evaluator.observe(neut10)
-
-            self.eval_0_neut = self.evaluator_0.act()
-            self.eval_1_neut = self.evaluator_1.act()
-
-            # TODO: get the relevant actions here. Need agreement and reasoning if not None.
-            # if self.ent_rate_0 == self.ent_rate_1:
-            #     self.agreed = 1
-            # else:
-            #     self.agreed = 0
-            # for evaluator in self.evaluators:
-            #     evaluator.observe(feedback)
-
-            self.episodeDone = True
-        """
 
 
     def episode_done(self):

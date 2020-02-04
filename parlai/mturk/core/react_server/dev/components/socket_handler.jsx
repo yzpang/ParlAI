@@ -274,7 +274,7 @@ class SocketHandler extends React.Component {
 
   // Required function - The BaseApp class will call this function to enqueue
   // packet sends that are requested by the frontend user (worker)
-  handleQueueMessage(text, task_data, task_data2, callback, is_system = false) {
+  handleQueueMessage(text, task_data, task_data2, task_data3, callback, is_system = false) {
     let new_message_id = uuidv4();
     let duration = null;
     if (!is_system && this.state.message_request_time != null) {
@@ -288,6 +288,7 @@ class SocketHandler extends React.Component {
         text: text,
         task_data: task_data,
         task_data2: task_data2,
+        task_data3: task_data3,
         id: this.props.agent_id,
         message_id: new_message_id,
         episode_done: false,

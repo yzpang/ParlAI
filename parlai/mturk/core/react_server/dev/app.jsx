@@ -132,11 +132,11 @@ class MainApp extends React.Component {
     getHitConfig(data => this.handleIncomingHITData(data));
   }
 
-  onMessageSend(text, data, data2, callback, is_system) {
+  onMessageSend(text, data, data2, data3, callback, is_system) {
     if (text === '') {
       return;
     }
-    this.socket_handler.handleQueueMessage(text, data, data2, callback, is_system);
+    this.socket_handler.handleQueueMessage(text, data, data2, data3, callback, is_system);
   }
 
   render() {
@@ -216,7 +216,7 @@ class MainApp extends React.Component {
           task_done={this.state.task_done}
           done_text={this.state.done_text}
           chat_state={this.state.chat_state}
-          onMessageSend={(m, d, dd, c, s) => this.onMessageSend(m, d, dd, c, s)}
+          onMessageSend={(m, d, dd, ddd, c, s) => this.onMessageSend(m, d, dd, ddd,c, s)}
           socket_status={this.state.socket_status}
           messages={this.state.messages}
           agent_id={this.state.agent_id}
@@ -303,11 +303,11 @@ class StaticApp extends React.Component {
     getHitConfig(data => this.handleIncomingHITData(data));
   }
 
-  onMessageSend(text, data, data2, callback, is_system) {
+  onMessageSend(text, data, data2, data3, callback, is_system) {
     if (text === '') {
       return;
     }
-    this.socket_handler.handleQueueMessage(text, data, data2, callback, is_system);
+    this.socket_handler.handleQueueMessage(text, data, data2, data3, callback, is_system);
   }
 
   onValidData(valid, response_data) {
@@ -425,7 +425,7 @@ class StaticApp extends React.Component {
           get_task_feedback={this.state.get_task_feedback}
           done_text={this.state.done_text}
           chat_state={this.state.chat_state}
-          onMessageSend={(m, d, dd, c, s) => this.onMessageSend(m, d, dd, c, s)}
+          onMessageSend={(m, d, dd, ddd, c, s) => this.onMessageSend(m, d, dd, ddd, c, s)}
           socket_status={this.state.socket_status}
           messages={this.state.messages}
           agent_id={this.state.agent_id}

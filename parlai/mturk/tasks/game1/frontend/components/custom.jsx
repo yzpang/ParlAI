@@ -12,6 +12,7 @@ import {
   FormControl, 
   Button, 
   Radio,
+  Col,
   ControlLabel,
   FormGroup,
   FormLabel } from 'react-bootstrap';
@@ -70,6 +71,77 @@ class WriterIdleResponse extends React.Component {
   }
 }
 
+class Hourglass extends React.Component {
+  render() {
+    // TODO move to CSS document
+    let hourglass_style = {
+      marginTop: '-1px',
+      marginRight: '5px',
+      display: 'inline',
+      float: 'left',
+    };
+
+    // TODO animate?
+    return (
+      <div id="hourglass" style={hourglass_style}>
+        <span className="glyphicon glyphicon-hourglass" aria-hidden="true" />
+      </div>
+    );
+  }
+}
+
+class EvaluatorWaitingMessage extends React.Component {
+  render() {
+    let message_style = {
+      float: 'left',
+      display: 'table',
+      backgroundColor: '#fff',
+    };
+    let text = 'Waiting for the writers to compose their claims...';
+    if (this.props.world_state == 'waiting') {
+      text = 'Waiting to pair with a task...';
+    }
+    return (
+      <div
+        id="waiting-for-message"
+        className="row"
+        style={{ marginLeft: '0', marginRight: '0' }}
+      >
+        <div className="alert alert-warning" role="alert" style={message_style}>
+          <Hourglass />
+          <span style={{ fontSize: '16px' }}>{text}</span>
+        </div>
+      </div>
+    );
+  }
+}
+
+class WriterWaitingMessage extends React.Component {
+  render() {
+    let message_style = {
+      float: 'left',
+      display: 'table',
+      backgroundColor: '#fff',
+    };
+    let text = 'Waiting for the rankers to rank your claims...';
+    if (this.props.world_state == 'waiting') {
+      text = 'Waiting to pair with a task...';
+    }
+    return (
+      <div
+        id="waiting-for-message"
+        className="row"
+        style={{ marginLeft: '0', marginRight: '0' }}
+      >
+        <div className="alert alert-warning" role="alert" style={message_style}>
+          <Hourglass />
+          <span style={{ fontSize: '16px' }}>{text}</span>
+        </div>
+      </div>
+    );
+  }
+}
+
 class WriterResponse extends React.Component {
   constructor(props) {
     super(props);
@@ -120,27 +192,6 @@ class WriterResponse extends React.Component {
     }
   }
 
-  // checkValidData() {
-  //   console.log(this.state);
-  //   if (this.state.entailText !== "") {
-  //     let response_data = {
-  //       entailText: this.state.entailText,
-  //     };
-  //     this.props.onValidDataChange(true, response_data);
-  //     return;
-  //   }
-  //   this.props.onValidDataChange(false, {});
-  // }
-
-  // handleInputChange(event) {
-  //   console.log(event);
-  //   let target = event.target;
-  //   let value = target.value;
-  //   let name = target.name;
-
-  //   this.setState({ [name]: value }, this.checkValidData);
-  // }
-
   handleInputChange(event) {
     console.log(event)
     let target = event.target;
@@ -167,6 +218,8 @@ class WriterResponse extends React.Component {
       paddingRight: '25px',
       float: 'left',
       width: '100%',
+      height: '300px',
+      overflowY: 'scroll',
     };
     let input_style = {
       height: '50px',
@@ -185,14 +238,15 @@ class WriterResponse extends React.Component {
 
     let text_entail = (
       <div>
-        Please write a claim that is <b> Definitely Correct </b> about the situation or event in the prompt.
+        Please write a claim that is <font color="#E8684C"> Definitely Correct </font> about the situation or event in the prompt,
       </div>
       );
     let entail_input = (
       <div>
         <ControlLabel>{text_entail}</ControlLabel>
         <FormControl
-          type="text"
+          componentClass="textarea"
+          rows="3"
           id="id_text_input0"
           name="entailText"
           style={{
@@ -214,14 +268,15 @@ class WriterResponse extends React.Component {
 
     let text_contradict = (
       <div>
-        Please write a claim that is <b> Definitely Incorrect </b> about the situation or event in the prompt.
+        Please write a claim that is <font color="#E8684C"> Definitely Incorrect </font> about the situation or event in the prompt,
       </div>
       );
     let contradict_input = (
       <div>
         <ControlLabel>{text_contradict}</ControlLabel>
         <FormControl
-          type="text"
+          componentClass="textarea"
+          rows="3"
           id="id_text_input1"
           name="contradictText"
           style={{
@@ -241,14 +296,15 @@ class WriterResponse extends React.Component {
 
     let text_neutral = (
       <div>
-        Please write a claim that is <b> Neither </b> definitely correct nor definitely incorrect about the situation or event in the prompt.
+        Please write a claim that is <font color="#E8684C"> Neither </font> definitely correct nor definitely incorrect about the situation or event in the prompt,
       </div>
       );
     let neutral_input = (
       <div>
         <ControlLabel>{text_neutral}</ControlLabel>
         <FormControl
-          type="text"
+          componentClass="textarea"
+          rows="3"
           id="id_text_input2"
           name="neutralText"
           style={{
@@ -266,51 +322,6 @@ class WriterResponse extends React.Component {
       </div>
     );
 
-    // let text_input = (
-    //   <FormControl
-    //     type="text"
-    //     id="id_text_input"
-    //     style={{
-    //       width: '80%',
-    //       height: '100%',
-    //       float: 'left',
-    //       fontSize: '16px',
-    //     }}
-    //     value={this.state.textval}
-    //     placeholder="Please enter here..."
-    //     onKeyPress={e => this.handleKeyPress(e)}
-    //     onChange={e => this.updateValue(e.target.value)}
-    //     disabled={!this.props.active || this.state.sending}
-    //   />
-    // );
-
-    // let hypotheses = (
-    //   <div>
-    //     <Form>
-    //       <FormGroup controlId="entailText">
-    //         <FormLabel>Please write a claim that is <b> Definitely Correct </b> about the situation or event in the prompt.</FormLabel>
-    //         <FormControl type="text" 
-    //         placeholder="Please write your claim here..." 
-    //         onChange={this.handleInputChange}/>
-    //       </FormGroup>
-
-    //       <FormGroup controlId="contradictText">
-    //         <FormLabel>Please write a claim that is <b> Definitely Incorrect </b> about the situation or event in the prompt.</FormLabel>
-    //         <FormControl type="text" 
-    //         placeholder="Please write your claim here..." 
-    //         onChange={this.handleInputChange}/>
-    //       </FormGroup>
-          
-    //       <FormGroup controlId="neutralText">
-    //         <FormLabel>Please write a claim that is <b> Neither </b> definitely correct nor definitely incorrect about the situation or event in the prompt.</FormLabel>
-    //         <FormControl type="text" 
-    //         placeholder="Please write your claim here..." 
-    //         onChange={this.handleInputChange}/>
-    //       </FormGroup>
-    //     </Form>
-    //   </div>
-    // );
-
     // TODO attach send message callback
     let submit_button = (
       <Button
@@ -322,7 +333,7 @@ class WriterResponse extends React.Component {
         }
         onClick={() => this.tryMessageSend()}
       >
-        Send
+        Submit
       </Button>
     );
 
@@ -346,16 +357,67 @@ class WriterResponse extends React.Component {
 class EvaluatorResponse extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { textval: '', sending: false };
+    this.state = { 
+      textreason: '',
+      claimChoice: '',
+      validation1: '',
+      validation2: '',
+      sending: false};
+    this.handleInputChange = this.handleInputChange.bind(this);
   }
 
-  tryMessageSend(value) {
+  componentDidUpdate(prevProps, prevState, snapshot) {
+    // Only change in the active status of this component should cause a
+    // focus event. Not having this would make the focus occur on every
+    // state update (including things like volume changes)
+    if (this.props.active && !prevProps.active) {
+      $('input#id_text_input').focus();
+    }
+    this.props.onInputResize();
+  }
+
+  // tryMessageSend() {
+  //   if ((this.state.accept1 != '' || this.state.reject1 != '') && (this.state.accept2 != '' || this.state.reject2 != '') && this.state.claimChoice != '' && this.props.active && !this.state.sending) {
+  //     this.setState({ sending: true });
+  //     this.props.onMessageSend(this.state.accept1, this.state.reject1, this.state.accpet2, this.state.reject2, this.state.claimChoice, this.state.textreason, {}, () =>
+  //       this.setState({ accept1: '', reject1: '', accept2: '', reject2: '', claimChoice: '', textreason: '', sending: false })
+  //     );
+  //   }
+  // }
+
+  tryMessageSend() {
     if (this.props.active && !this.state.sending) {
       this.setState({ sending: true });
-      this.props.onMessageSend(value, {}, () =>
-        this.setState({ textval: '', sending: false })
+      this.props.onMessageSend(this.state.claimChoice, this.state.textreason, this.state.validation1, this.state.validation2, {}, () =>
+        this.setState({ claimChoice: '', textreason: '', validation1: '', validation2: '', sending: false })
       );
     }
+  }
+
+  handleEnterKey(event) {
+    event.preventDefault();
+    if (this.props.task_done) {
+      this.props.allDoneCallback();
+    } else if (this.props.subtask_done && this.props.show_next_task_button) {
+      this.props.nextButtonCallback();
+    }
+  }
+
+  handleKeyPress(e) {
+    if (e.key === 'Enter') {
+      this.tryMessageSend();
+      e.stopPropagation();
+      e.nativeEvent.stopImmediatePropagation();
+    }
+  }
+
+  handleInputChange(event) {
+    console.log(event)
+    let target = event.target;
+    let value = target.value;
+    let name = target.name;
+
+    this.setState({ [name]: value });
   }
 
   _showMessage = (bool) => {
@@ -373,11 +435,21 @@ class EvaluatorResponse extends React.Component {
       paddingRight: '25px',
       float: 'left',
       width: '100%',
+      height: '300px',
+      overflowY: 'scroll',
     };
+    //  TODO: make height variable, a percentage?
     let input_style = {
       height: '50px',
       width: '100%',
       display: 'block',
+      float: 'left',
+
+    };
+    let input_inline_style = {
+      height: '50px',
+      width: '100%',
+      display: 'inline-block',
       float: 'left',
     };
     let submit_style = {
@@ -389,120 +461,198 @@ class EvaluatorResponse extends React.Component {
       padding: '0px',
     };
 
-    let reject_button1 = (
-      <Button
-        className="btn btn-danger"
-        style={submit_style}
-        id="id_reject_claim1_button"
-        disabled={!this.props.active || this.state.sending}
-        onClick={this._showMessage.bind(null, false)}
-      >
-        Invalid
-      </Button>
-    );
-    // onClick={() => this.tryMessageSend('invalid')}
+    const approvebox  = {
+      backgroundColor: '#66B46E',
+      borderRadius: 3,
+      padding: '5px',
+      border: '1px solid #44864B',
+      color: 'white',
+    }
 
-    let approve_button1 = (
-      <Button
-        className="btn btn-success"
-        style={submit_style}
-        id="id_approve_claim1_button"
-        disabled={!this.props.active || this.state.sending}
-        onClick={this._showMessage.bind(null, false)}
-      >
-        Approve
-      </Button>
-    );
-    //onClick={this._showMessage.bind(null, false)}
+    const rejectbox  = {
+      backgroundColor: '#E8684C',
+      borderRadius: 3,
+      padding: '5px',
+      border: '1px solid #D34000',
+      color: 'white',
+    }
 
-    let reject_button2 = (
-      <Button
-        className="btn btn-danger"
-        style={submit_style}
-        id="id_reject_claim1_button"
-        disabled={!this.props.active || this.state.sending}
-        onClick={this._showMessage.bind(null, true)}
-      >
-        Invalid
-      </Button>
-    );
-    // onClick={() => this.tryMessageSend('invalid')}
+    const claimbox  = {
+      backgroundColor: '#636363',
+      borderRadius: 3,
+      padding: '5px',
+      border: '1px solid #393939',
+      color: 'white',
+    }
 
-    let approve_button2 = (
-      <Button
-        className="btn btn-success"
-        style={submit_style}
-        id="id_approve_claim1_button"
-        disabled={!this.props.active || this.state.sending}
-        onClick={this._showMessage.bind(null, true)}
-      >
-        Approve
-      </Button>
-    );
-    //onClick={this._showMessage.bind(null, false)}
+    const inline_text = {
+      display: "inline-block",
+    };
 
-    let text_rank1 = "Which claim do you think is better?" ;
-    let rank1 = (
+    const approve = "Valid"
+    const invalid = "Invalid"
+    const text_claim1 = "Claim 1"
+    const text_claim2 = "Claim 2"
+    let validation_buttons_1 = (
       <div>
-        <ControlLabel> {text_rank1} </ControlLabel>
-        <FormGroup>
-          <Radio
-            name="groupOptions1"
-          >
-            Claim 1
-          </Radio>
-          <Radio
-            name="groupOptions1"
-          >
-            Claim 2
-          </Radio>
-        </FormGroup>
+        <Form
+          horizontal
+          style={{ backgroundColor: "#eeeeee", paddingBottom: "10px", 
+            display: "inline-block" }}
+        >
+          <div className="container" style={{ width: "auto" }}>
+          <ControlLabel> {text_claim1}, </ControlLabel>
+            <FormGroup>
+              <Col sm={6}>
+                <Radio
+                  name="validation1"
+                  value={approve}
+                  style={{ width: "100%" }}
+                  checked={this.state.validation1 == approve}
+                  onChange={this.handleInputChange}
+                >
+                  <div style={approvebox}> Approve </div>
+                </Radio>
+              </Col>
+              <Col sm={6}>
+                <Radio
+                  name="validation1"
+                  value={invalid}
+                  style={{ width: "100%" }}
+                  checked={this.state.validation1 == invalid}
+                  onChange={this.handleInputChange}
+                >
+                  <div style={rejectbox}> Invalid </div>
+                </Radio>
+              </Col>
+            </FormGroup>
+          </div>
+        </Form>
       </div>
     );
 
-    // // TODO: remove this in the 2 writer setting. redundant.
-    // let text_rank2 = "Which claim do you think is worse?" ;
-    // let rank2 = (
-    //   <div>
-    //     <ControlLabel> {text_rank2} </ControlLabel>
-    //     <FormGroup>
-    //       <Radio
-    //         name="groupOptions2"
-    //       >
-    //         Claim 1
-    //       </Radio>
-    //       <Radio
-    //         name="groupOptions2"
-    //       >
-    //         Claim 2
-    //       </Radio>
-    //     </FormGroup>
-    //   </div>
-    // );
+    let validation_buttons_2 = (
+      <div>
+        <Form
+          horizontal
+          style={{ backgroundColor: "#eeeeee", paddingBottom: "10px",
+            display: "inline-block" }}
+        >
+          <div className="container" style={{ width: "auto" }}>
+          <ControlLabel> {text_claim2}, </ControlLabel>
+            <FormGroup>
+              <Col sm={6}>
+                <Radio
+                  name="validation2"
+                  value={approve}
+                  style={{ width: "100%" }}
+                  checked={this.state.validation2 == approve}
+                  onChange={this.handleInputChange}
+                  onClick={this._showMessage.bind(null, true)}
+                >
+                  <div style={approvebox}> Approve </div>
+                </Radio>
+              </Col>
+              <Col sm={6}>
+                <Radio
+                  name="validation2"
+                  value={invalid}
+                  style={{ width: "100%" }}
+                  checked={this.state.validation2 == invalid}
+                  onChange={this.handleInputChange}
+                  onClick={this._showMessage.bind(null, true)}
+                >
+                  <div style={rejectbox}> Invalid </div>
+                </Radio>
+              </Col>
+            </FormGroup>
+          </div>
+        </Form>
+      </div>
+    );
 
-    
-    let text_reasoning =
-      "Optionally, please provide a brief justification for your ranking";
-    // TODO: test text box.
+    // const s1_name = "Claim 1";
+    // const s2_name = "Claim 2"
+    const text_rank1 = "Which claim do you think is better?" ;
+    // onSubmit={this.handleEnterKey}
+
+    let rank1 = (
+      <div>
+        <Form
+          horizontal
+          style={{ backgroundColor: "#eeeeee", paddingBottom: "10px",
+            display: "inline-block" }}
+        >
+          <div className="container" style={{ width: "auto" }}>
+            <ControlLabel> {text_rank1} </ControlLabel>
+            <FormGroup>
+              <Col sm={6}>
+                <Radio
+                  name="claimChoice"
+                  value={text_claim1}
+                  style={{ width: "100%" }}
+                  checked={this.state.claimChoice == text_claim1}
+                  onChange={this.handleInputChange}
+                >
+                  <div style={claimbox}> Claim 1 </div>
+                </Radio>
+              </Col>
+              <Col sm={6}>
+                <Radio
+                  name="claimChoice"
+                  value={text_claim2}
+                  style={{ width: "100%" }}
+                  checked={this.state.claimChoice == text_claim2}
+                  onChange={this.handleInputChange}
+                >
+                  <div style={claimbox}> Claim 2 </div>
+                </Radio>
+              </Col>
+            </FormGroup>
+            {text_reason}
+          </div>
+        </Form>
+      </div>
+    );
+
+    let text_reasoning = (
+      <div>
+        Optionally (but encouraged), please provide a brief justification for your ranking
+      </div>
+      );
     let text_reason = (
       <div>
         <ControlLabel>{text_reasoning}</ControlLabel>
         <FormControl
           type="text"
-          id="id_text_input"
+          id="id_textreason"
+          name="textreason"
           style={{
             width: '80%',
             height: '100%',
             float: 'left',
             fontSize: '16px',
           }}
-          value={this.state.textval}
-          placeholder="Optionally add explanation here..."
+          value={this.state.textreason}
+          placeholder="Optionally add your justification here..."
           onKeyPress={e => this.handleKeyPress(e)}
-          onChange={e => this.updateValue(e.target.value)}
+          onChange={this.handleInputChange}
           disabled={!this.props.active || this.state.sending}
         />
       </div>
+    );
+
+    let submit_button = (
+      <Button
+        className="btn btn-primary"
+        style={submit_style}
+        id="id_send_msg_button"
+        disabled={!this.props.active || this.state.sending
+        }
+        onClick={() => this.tryMessageSend()}
+      >
+        Submit
+      </Button>
     );
 
     return (
@@ -512,23 +662,35 @@ class EvaluatorResponse extends React.Component {
         style={pane_style}
       >
         <div style={input_style}>
-          <div>Claims 1: {approve_button1} {reject_button1}</div>
-          <div>Claims 2: {approve_button2} {reject_button2}</div>
+          {validation_buttons_1}
+          {validation_buttons_2}
+          { this.state.showMessage && (
+              <div>
+                {rank1}
+                {text_reason}
+              </div> )}
+          {submit_button}
         </div>
-        { this.state.showMessage && (<div style={input_style}>{rank1}</div>) }
-        <div style={input_style}>
-        {text_reason}
-        </div>
-        // <div style={input_style}>
-        //   {rank1}
-        // </div>
-        // <div style={input_style}>
-        //   {rank2}
-        // </div>
       </div>
     );
   }
 }
+// { this.state.showMessage && (<div style={input_style}>{rank1}</div>) }
+// <div
+//   id="response-type-text-input"
+//   className="response-type-module"
+//   style={pane_style}
+// >
+//   <div style={{ width: "auto" }}>
+//     <div>Claims 1: {approve_button1} {reject_button1} <br /></div>
+//     <div>Claims 2: {approve_button2} {reject_button2} <br /></div>
+//   </div>
+//   <div style={input_style}>{rank1}</div>
+//   <div style={input_style}>
+//   <br /><br />
+//   {text_reason}{submit_button}
+//   </div>
+// </div>
 
 class ResponsePaneWriter extends React.Component {
   render() {
@@ -663,14 +825,23 @@ var TextResponseHolder = {
 
 var ResponsePaneHolder = {
   // default: leave blank to use original default when no ids match
-  Writer: ResponsePaneWriter,
-  Evaluator: ResponsePaneyEvaluator,
+  Writer0: ResponsePaneWriter,
+  Writer1: ResponsePaneWriter,
+  Evaluator0: ResponsePaneyEvaluator,
+  Evaluator1: ResponsePaneyEvaluator,
 };
+
+var WaitingResponseHolder = {
+  Writer0: WriterWaitingMessage,
+  Writer1: WriterWaitingMessage,
+  Evaluator0: EvaluatorWaitingMessage,
+  Evaluator1: EvaluatorWaitingMessage,
+}
 
 export default {
   // ComponentName: CustomReplacementComponentMap
+  // XTextResponse:  TextResponseHolder,
+  // XIdleResponse:  IdleResponseHolder,
+  XWaitingMessage: WaitingResponseHolder,
   XResponsePane:  ResponsePaneHolder,
 };
-// XTextResponse: { default: TextResponseHolder},
-// XIdleResponse: { default: IdleResponseHolder},
-// XResponsePane: { default: ResponsePaneyy }
