@@ -5,7 +5,6 @@
 # LICENSE file in the root directory of this source tree.
 from parlai.mturk.core.worlds import MTurkOnboardWorld, MTurkTaskWorld
 import threading
-from parlai.mturk.core.agents import AssignState
 
 class WriterOnboardingWorld(MTurkOnboardWorld):
     """Example onboarding world. Sends a message from the world to the
@@ -82,125 +81,160 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
         self.eval_1_neut = None
 
     def parley(self):
-        prompt = {
-                'id': 'Prompt',
-                'text': "Norman architecture typically stands out as a new stage in the architectural history of the regions they subdued. They spread a unique Romanesque idiom to England and Italy, and the encastellation of these regions with keeps in their north French style fundamentally altered the military landscape. Their style was characterised by rounded arches, particularly over windows and doorways, and massive proportions.'}, {'qas': [{'question': 'What architecture type came after Norman in England?"
-            }
-
         if self.turns == 0:
-            # Hypothesis writing
+            prompt = {
+                    'id': 'Prompt',
+                    'text': "Norman architecture typically stands out as a new stage in the architectural history of the regions they subdued. They spread a unique Romanesque idiom to England and Italy, and the encastellation of these regions with keeps in their north French style fundamentally altered the military landscape. Their style was characterised by rounded arches, particularly over windows and doorways, and massive proportions.'}, {'qas': [{'question': 'What architecture type came after Norman in England?"
+                }
+            for writer in self.writers:
+                writer.observe({'id':'Role: ', 'text': 'Writer'})
 
-            # TODO: fix below to be better code. all in single for loop.
+            for evaluator in self.evaluators:
+                evaluator.observe({'id':'Role: ', 'text': 'Ranker'})
+
             for agent in self.mturk_agents:
                 agent.observe(prompt)
-            # for evaluator in self.evaluators:
-            #     evaluator.observe({'id': 'Dear ranker', 'text': 'Please wait while the writers compose their claims.'})
 
-            self.hypotheses_0 = self.writer_0.act()
-            self.hypotheses_1 = self.writer_1.act()
+            self.writers_copy = self.writers.copy()
+            self.evaluators_copy = self.evaluators.copy()
+            self.evaluators_copy_n = self.evaluators.copy()
+            self.evaluators_copy_c = self.evaluators.copy()
+            
+            self.hypotheses = []
+            self.ents = []
+            self.neuts = []
+            self.conts = []
 
             self.turns += 1
-
-        # if self.turns == 1:
-        #     ad = {'id': 'System', 'text': 'Testing printing claims'}
-        #     writer1_entail = {'text': 'Entail: ' + self.hypotheses_1['text']}
-        #     writer1_contradict = {'text': 'Contradict: ' + self.hypotheses_1['task_data']}
-        #     self.writer_0.observe(writer1_entail)
-        #     self.writer_0.observe(writer1_contradict)
-        #     print(self.hypotheses_1)
-        #     import pdb; pdb.set_trace()
-        #     self.episodeDone = True
-
 
         if self.turns == 1:
-            ad = {'id': 'System', 'text': "Given the prompt and label, please decide if the claim is appropriate, mark it as Invalid if the claim doesn't fit the label or is completely unrelated to the prompt. Then rank the claims."}
+            # Hypothesis writing
+            for writer in self.writers_copy:
+                hypothesis = writer.act(blocking=False)
+                if hypothesis is not None:
+                    self.hypotheses.append(hypothesis)
+                    self.writers_copy.remove(writer)
+                    print(len(self.writers_copy))
+                    print(self.hypotheses)
 
-            # rankthem = {'id': 'System', 'text': "Now, given the prompt and label, please rank the claims based on creativity, complexity, and relevance. Optionally, add an explanation of your ranking to help other evaluators understand your reasoning."}
-
-            # Provide feedback to evaluators
-            self.agreed = None
-            if self.agreed == 1:
-                feedback = {'id': 'System', 'text': "You agreed with the other evaluator on the ranking for the Definitely Correct examples. Bonus = $0.5"}
-            else:
-                feedback = {'id': 'System', 'text': "You disagreed with the other evaluator on the ranking for the Definitely Correct examples."}
-
-
-            writer0_entail = {'id':'Claim 1', 'text': self.hypotheses_0['text']}
-            writer0_contradict = {'id':'Claim 1','text': self.hypotheses_0['task_data']}
-            writer0_neutral = {'id':'Claim 1','text': self.hypotheses_0['task_data2']}
-
-            writer1_entail = {'id':'Claim 2','text':  self.hypotheses_1['text']}
-            writer1_contradict = {'id':'Claim 2','text':  self.hypotheses_1['task_data']}
-            writer1_neutral = {'id':'Claim 2','text': self.hypotheses_1['task_data2']}
-
-
-            for evaluator in self.evaluators:
-                # evaluator.observe(ad)
-                # evaluator.observe(prompt)
-                evaluator.observe({'id':'Label', 'text':'Definitely correct'})
-                evaluator.observe(writer0_entail)
-                evaluator.observe(writer1_entail)
-                # TODO: break this up. evluate one hypothesis at a time.
-                # coin = random.randint(0, 1)
-                # if coin == 0:
-                #     evaluator.observe(ent01)
-                # else:
-                #     evaluator.observe(ent10)
-
-            self.eval_0_ent = self.evaluator_0.act(blocking=False)
-            self.eval_1_ent = self.evaluator_1.act(blocking=False)
-
-            if self.eval_0_ent['text'] == self.eval_1_ent['text']:
-                for evaluator in self.evaluators:
-                    evaluator.observe({'id':'Agreement', 'text':'You agreed! Bonus'})
-                    
-            self.turns += 1
+                    if len(self.writers_copy) == 0:
+                        self.turns +=1
 
         if self.turns == 2:
-            ad = {'id': 'System', 'text': "Given the prompt and label, please decide if the claim is appropriate, mark it as Invalid if the claim doesn't fit the label or is completely unrelated to the prompt. Then rank the claims."}
-
-            # rankthem = {'id': 'System', 'text': "Now, given the prompt and label, please rank the claims based on creativity, complexity, and relevance. Optionally, add an explanation of your ranking to help other evaluators understand your reasoning."}
-
-            # Provide feedback to evaluators
-            self.agreed = None
-            if self.agreed == 1:
-                feedback = {'id': 'System', 'text': "You agreed with the other evaluator on the ranking for the Definitely Correct examples. Bonus = $0.5"}
+            if self.hypotheses[0]['id'] == "Writer0":
+                self.hypotheses_0 = self.hypotheses[0]
+                self.hypotheses_1 = self.hypotheses[1]
             else:
-                feedback = {'id': 'System', 'text': "You disagreed with the other evaluator on the ranking for the Definitely Correct examples."}
+                self.hypotheses_0 = self.hypotheses[1]
+                self.hypotheses_1 = self.hypotheses[0]
 
+            self.writer0_entail = {'id':'Claim 1', 'text': self.hypotheses_0['text']}
+            self.writer0_contradict = {'id':'Claim 1','text': self.hypotheses_0['task_data']}
+            self.writer0_neutral = {'id':'Claim 1','text': self.hypotheses_0['task_data2']}
 
-            writer0_entail = {'id':'Claim 1', 'text': self.hypotheses_0['text']}
-            writer0_contradict = {'id':'Claim 1','text': self.hypotheses_0['task_data']}
-            writer0_neutral = {'id':'Claim 1','text': self.hypotheses_0['task_data2']}
-
-            writer1_entail = {'id':'Claim 2','text':  self.hypotheses_1['text']}
-            writer1_contradict = {'id':'Claim 2','text':  self.hypotheses_1['task_data']}
-            writer1_neutral = {'id':'Claim 2','text': self.hypotheses_1['task_data2']}
+            self.writer1_entail = {'id':'Claim 2','text':  self.hypotheses_1['text']}
+            self.writer1_contradict = {'id':'Claim 2','text':  self.hypotheses_1['task_data']}
+            self.writer1_neutral = {'id':'Claim 2','text': self.hypotheses_1['task_data2']}
 
 
             for evaluator in self.evaluators:
-                # evaluator.observe(ad)
-                # evaluator.observe(prompt)
-                evaluator.observe({'id':'Label', 'text':'Definitely incorrect'})
-                evaluator.observe(writer0_contradict)
-                evaluator.observe(writer1_contradict)
-                # TODO: break this up. evluate one hypothesis at a time.
-                # coin = random.randint(0, 1)
-                # if coin == 0:
-                #     evaluator.observe(ent01)
-                # else:
-                #     evaluator.observe(ent10)
+                evaluator.observe({'id':'Label', 'text':'Definitely correct'})
+                evaluator.observe(self.writer0_entail)
+                evaluator.observe(self.writer1_entail)
+            self.turns += 1
 
-            self.eval_0_ent = self.evaluator_0.act()
-            self.eval_1_ent = self.evaluator_1.act()
+        if self.turns == 3:
+            semi_turn = 0
+            if semi_turn == 0:
+                for evaluator in self.evaluators_copy:
+                    evaluation = evaluator.act(blocking=False, ranker=True)
+                    if evaluation is not None:
+                        self.ents.append(evaluation)
+                        self.evaluators_copy.remove(evaluator)
+                        print(len(self.evaluators_copy))
+                        print(self.ents)
 
-            if self.eval_0_ent['text'] == self.eval_1_ent['text']:
-                for evaluator in self.evaluators:
-                    evaluator.observe({'id':'Agreement', 'text':'You agreed! Bonus'})
+                        if len(self.evaluators_copy) == 0:
+                            if self.ents[0]['text'] == self.ents[1]['text']:
+                                for evaluator in self.evaluators:
+                                    evaluator.observe({'id':'Agreement', 'text':'You agreed! Bonus'})
+                            self.evaluator_0.observe(self.writer0_contradict)
+                            self.evaluator_1.observe(self.writer1_contradict)
+                            semi_turn += 1
+            if semi_turn == 1:
+                for evaluator in self.evaluators_copy_c:
+                    evaluation = evaluator.act(blocking=False,ranker=True)
+                    if evaluation is not None:
+                        self.conts.append(evaluation)
+                        self.evaluators_copy_c.remove(evaluator)
+                        print(len(self.evaluators_copy_c))
+                        print(self.conts)
 
-            import pdb; pdb.set_trace()
-            # self.turns += 1
-            self.episodeDone = True
+                        if len(self.evaluators_copy_c) == 0:
+                            if self.conts[0]['text'] == self.conts[1]['text']:
+                                for evaluator in self.evaluators:
+                                    evaluator.observe({'id':'Agreement', 'text':'You agreed! Bonus'})
+                            self.evaluator_0.observe(self.writer0_neutral)
+                            self.evaluator_1.observe(self.writer1_neutral)
+                            semi_turn += 1
+            if semi_turn == 2:
+                for evaluator in self.evaluators_copy_n:
+                    evaluation = evaluator.act(blocking=False)
+                    if evaluation is not None:
+                        self.neuts.append(evaluation)
+                        self.evaluators_copy_n.remove(evaluator)
+                        print(len(self.evaluators_copy_n))
+                        print(self.neuts)
+
+                        if len(self.evaluators_copy_n) == 0:
+                            if self.neuts[0]['text'] == self.neuts[1]['text']:
+                                for evaluator in self.evaluators:
+                                    evaluator.observe({'id':'Agreement', 'text':'You agreed! Bonus'})
+                            self.episodeDone = True
+
+        if self.turns == 4:
+            for evaluator in self.evaluators:
+                evaluator.observe({'id':'Label', 'text':'Definitely correct'})
+                evaluator.observe(self.writer0_contradict)
+                evaluator.observe(self.writer1_contradict)
+            self.turns += 1
+
+        if self.turns == 5:
+            for evaluator in self.evaluators_copy_c:
+                evaluation = evaluator.act(blocking=False)
+                if evaluation is not None:
+                    self.conts.append(evaluation)
+                    self.evaluators_copy_c.remove(evaluator)
+                    print(len(self.evaluators_copy_c))
+                    print(self.conts)
+
+                    if len(self.evaluators_copy_c) == 0:
+                        if self.conts[0]['text'] == self.conts[1]['text']:
+                            for evaluator in self.evaluators:
+                                evaluator.observe({'id':'Agreement', 'text':'You agreed! Bonus'})
+                        self.turns +=1
+
+        if self.turns == 6:
+            for evaluator in self.evaluators:
+                evaluator.observe({'id':'Label', 'text':'Definitely correct'})
+                evaluator.observe(self.writer0_neutral)
+                evaluator.observe(self.writer1_neutral)
+            self.turns += 1
+
+        if self.turns == 7:
+            for evaluator in self.evaluators_copy_n:
+                evaluation = evaluator.act(blocking=False)
+                if evaluation is not None:
+                    self.neuts.append(evaluation)
+                    self.evaluators_copy_n.remove(evaluator)
+                    print(len(self.evaluators_copy_n))
+                    print(self.neuts)
+
+                    if len(self.evaluators_copy_n) == 0:
+                        if self.neuts[0]['text'] == self.neuts[1]['text']:
+                            for evaluator in self.evaluators:
+                                evaluator.observe({'id':'Agreement', 'text':'You agreed! Bonus'})
+                        self.episodeDone = True
 
 
     def episode_done(self):

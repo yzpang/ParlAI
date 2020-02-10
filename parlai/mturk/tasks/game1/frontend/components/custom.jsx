@@ -357,14 +357,18 @@ class WriterResponse extends React.Component {
 class EvaluatorResponse extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { 
-      textreason: '',
-      claimChoice: '',
+    this.state = {
+      entailText: '',
       validation1: '',
-      validation2: '',
+      taskData: [],
       sending: false};
     this.handleInputChange = this.handleInputChange.bind(this);
+    // this.handleEnterKey = this.handleEnterKey.bind(this);
   }
+  //  textreason: '',
+  //    claimChoice: '',
+  //     validation1: '',
+  //     validation2: '',
 
   componentDidUpdate(prevProps, prevState, snapshot) {
     // Only change in the active status of this component should cause a
@@ -377,31 +381,35 @@ class EvaluatorResponse extends React.Component {
   }
 
   // tryMessageSend() {
-  //   if ((this.state.accept1 != '' || this.state.reject1 != '') && (this.state.accept2 != '' || this.state.reject2 != '') && this.state.claimChoice != '' && this.props.active && !this.state.sending) {
+  //   if (this.props.active && !this.state.sending) {
   //     this.setState({ sending: true });
-  //     this.props.onMessageSend(this.state.accept1, this.state.reject1, this.state.accpet2, this.state.reject2, this.state.claimChoice, this.state.textreason, {}, () =>
-  //       this.setState({ accept1: '', reject1: '', accept2: '', reject2: '', claimChoice: '', textreason: '', sending: false })
+  //     this.props.onMessageSend(this.state.claimChoice, this.state.textreason, this.state.validation1, this.state.validation2, {}, () =>
+  //       this.setState({ claimChoice: '', textreason: '', validation1: '', validation2: '', sending: false })
   //     );
   //   }
   // }
-
   tryMessageSend() {
     if (this.props.active && !this.state.sending) {
       this.setState({ sending: true });
-      this.props.onMessageSend(this.state.claimChoice, this.state.textreason, this.state.validation1, this.state.validation2, {}, () =>
-        this.setState({ claimChoice: '', textreason: '', validation1: '', validation2: '', sending: false })
+      this.props.onMessageSend(this.state.entailText, this.state.validation1, {}, () =>
+        this.setState({ validation1: '', validation1: '', sending: false })
       );
     }
   }
 
-  handleEnterKey(event) {
-    event.preventDefault();
-    if (this.props.task_done) {
-      this.props.allDoneCallback();
-    } else if (this.props.subtask_done && this.props.show_next_task_button) {
-      this.props.nextButtonCallback();
+  checkValidData() {
+    console.log(this.state);
+    if (this.state.validation1 !== "") {
+      let response_data = {
+        validation1: this.state.validation1,
+        entailText: this.state.entailText
+      };
+      this.props.onValidDataChange(true, response_data);
+      return;
     }
+    this.props.onValidDataChange(false, {});
   }
+
 
   handleKeyPress(e) {
     if (e.key === 'Enter') {
@@ -411,19 +419,45 @@ class EvaluatorResponse extends React.Component {
     }
   }
 
-  handleInputChange(event) {
-    console.log(event)
-    let target = event.target;
-    let value = target.value;
-    let name = target.name;
+  // handleInputChange(event) {
+  //   console.log(event)
+  //   let target = event.target;
+  //   let value = target.value;
+  //   let name = target.name;
 
-    this.setState({ [name]: value });
-  }
+  //   this.setState({ [name]: value });
+  // }
+
+  // handleInputChange(event) {
+  //   console.log(event);
+  //   let target = event.target;
+  //   let value = target.value;
+  //   let name = target.name;
+
+  //   this.setState({ [name]: value }, this.checkValidData);
+  // }
+
+  // handleEnterKey(event) {
+  //   event.preventDefault();
+  //   if (this.props.task_done) {
+  //     this.props.allDoneCallback();
+  //   } else if (this.props.subtask_done && this.props.show_next_task_button) {
+  //     this.props.nextButtonCallback();
+  //   }
+  // }
 
   _showMessage = (bool) => {
     this.setState({
       showMessage: bool
     });
+  }
+
+  updateValue(amount) {
+    if ((amount != '' && isNaN(amount)) || amount < 0) {
+      return;
+    }
+    amount = amount == '' ? 0 : amount;
+    this.setState({ entailText: '' + amount });
   }
 
   render() {
@@ -493,6 +527,8 @@ class EvaluatorResponse extends React.Component {
     const invalid = "Invalid"
     const text_claim1 = "Claim 1"
     const text_claim2 = "Claim 2"
+    // checked={this.state.validation1 == approve}
+    // checked={this.state.validation1 == invalid}
     let validation_buttons_1 = (
       <div>
         <Form
@@ -508,7 +544,6 @@ class EvaluatorResponse extends React.Component {
                   name="validation1"
                   value={approve}
                   style={{ width: "100%" }}
-                  checked={this.state.validation1 == approve}
                   onChange={this.handleInputChange}
                 >
                   <div style={approvebox}> Approve </div>
@@ -519,7 +554,6 @@ class EvaluatorResponse extends React.Component {
                   name="validation1"
                   value={invalid}
                   style={{ width: "100%" }}
-                  checked={this.state.validation1 == invalid}
                   onChange={this.handleInputChange}
                 >
                   <div style={rejectbox}> Invalid </div>
@@ -531,6 +565,8 @@ class EvaluatorResponse extends React.Component {
       </div>
     );
 
+    // checked={this.state.validation2 == approve}
+    // checked={this.state.validation2 == invalid}
     let validation_buttons_2 = (
       <div>
         <Form
@@ -546,7 +582,6 @@ class EvaluatorResponse extends React.Component {
                   name="validation2"
                   value={approve}
                   style={{ width: "100%" }}
-                  checked={this.state.validation2 == approve}
                   onChange={this.handleInputChange}
                   onClick={this._showMessage.bind(null, true)}
                 >
@@ -558,7 +593,6 @@ class EvaluatorResponse extends React.Component {
                   name="validation2"
                   value={invalid}
                   style={{ width: "100%" }}
-                  checked={this.state.validation2 == invalid}
                   onChange={this.handleInputChange}
                   onClick={this._showMessage.bind(null, true)}
                 >
@@ -574,8 +608,8 @@ class EvaluatorResponse extends React.Component {
     // const s1_name = "Claim 1";
     // const s2_name = "Claim 2"
     const text_rank1 = "Which claim do you think is better?" ;
-    // onSubmit={this.handleEnterKey}
-
+    // checked={this.state.claimChoice == text_claim1}
+    // checked={this.state.claimChoice == text_claim2}
     let rank1 = (
       <div>
         <Form
@@ -591,7 +625,6 @@ class EvaluatorResponse extends React.Component {
                   name="claimChoice"
                   value={text_claim1}
                   style={{ width: "100%" }}
-                  checked={this.state.claimChoice == text_claim1}
                   onChange={this.handleInputChange}
                 >
                   <div style={claimbox}> Claim 1 </div>
@@ -602,7 +635,6 @@ class EvaluatorResponse extends React.Component {
                   name="claimChoice"
                   value={text_claim2}
                   style={{ width: "100%" }}
-                  checked={this.state.claimChoice == text_claim2}
                   onChange={this.handleInputChange}
                 >
                   <div style={claimbox}> Claim 2 </div>
@@ -624,7 +656,8 @@ class EvaluatorResponse extends React.Component {
       <div>
         <ControlLabel>{text_reasoning}</ControlLabel>
         <FormControl
-          type="text"
+          componentClass="textarea"
+          rows="1"
           id="id_textreason"
           name="textreason"
           style={{
@@ -642,12 +675,54 @@ class EvaluatorResponse extends React.Component {
       </div>
     );
 
+    let text_entail = (
+      <div>
+        Please write a claim that is <font color="#E8684C"> Definitely Correct </font> about the situation or event in the prompt,
+      </div>
+      );
+    let entail_input = (
+      <div>
+        <ControlLabel>{text_entail}</ControlLabel>
+        <FormControl
+          componentClass="textarea"
+          rows="3"
+          id="id_text_input0"
+          name="entailText"
+          style={{
+            width: '80%',
+            height: '100%',
+            float: 'left',
+            fontSize: '16px',
+          }}
+          value={this.state.entailText}
+          placeholder="Please enter you claim here..."
+          onKeyPress={e => this.handleKeyPress(e)}
+          onChange={this.handleInputChange}
+          disabled={!this.props.active || this.state.sending}
+        />
+      </div>
+    );
+
+    // let submit_button = (
+    //   <Button
+    //     className="btn btn-primary"
+    //     style={submit_style}
+    //     id="id_send_msg_button"
+    //     disabled={
+    //       !this.props.active || this.state.sending
+    //     }
+    //     onClick={() => this.tryMessageSend()}
+    //   >
+    //     Submit
+    //   </Button>
+    // );
     let submit_button = (
       <Button
         className="btn btn-primary"
         style={submit_style}
         id="id_send_msg_button"
-        disabled={!this.props.active || this.state.sending
+        disabled={
+          !this.props.active || this.state.sending
         }
         onClick={() => this.tryMessageSend()}
       >
@@ -662,52 +737,28 @@ class EvaluatorResponse extends React.Component {
         style={pane_style}
       >
         <div style={input_style}>
-          {validation_buttons_1}
-          {validation_buttons_2}
-          { this.state.showMessage && (
-              <div>
-                {rank1}
-                {text_reason}
-              </div> )}
-          {submit_button}
+        {validation_buttons_1}
+        {entail_input}
+        {submit_button}
         </div>
       </div>
     );
   }
 }
-// { this.state.showMessage && (<div style={input_style}>{rank1}</div>) }
-// <div
-//   id="response-type-text-input"
-//   className="response-type-module"
-//   style={pane_style}
-// >
-//   <div style={{ width: "auto" }}>
-//     <div>Claims 1: {approve_button1} {reject_button1} <br /></div>
-//     <div>Claims 2: {approve_button2} {reject_button2} <br /></div>
-//   </div>
-//   <div style={input_style}>{rank1}</div>
-//   <div style={input_style}>
-//   <br /><br />
-//   {text_reason}{submit_button}
-//   </div>
-// </div>
+          // {validation_buttons_1}
+          // {validation_buttons_2}
+          // { this.state.showMessage && (
+          //     <div>
+          //       {rank1}
+          //       {text_reason}
+          //     </div> )}
+          // {submit_button}
 
 class ResponsePaneWriter extends React.Component {
   render() {
     let v_id = this.props.v_id;
     let XDoneResponse = getCorrectComponent("XDoneResponse", v_id);
     let XFormResponse = getCorrectComponent('XFormResponse', v_id);
-    // let XWriterResponse = getCorrectComponent("XWriterResponse", v_id);
-
-    // let response_pane = null;
-    // switch (this.props.task_state) {
-    //   case "done":
-    //     response_pane = <XDoneResponse {...this.props} />;
-    //     break;
-    //   default:
-    //     response_pane = <WriterResponse {...this.props} />;
-    //     break;
-    // }
 
     let response_pane = null;
     switch (this.props.chat_state) {
@@ -755,17 +806,6 @@ class ResponsePaneyEvaluator extends React.Component {
     let v_id = this.props.v_id;
     let XDoneResponse = getCorrectComponent("XDoneResponse", v_id);
     let XFormResponse = getCorrectComponent('XFormResponse', v_id);
-    // let XWriterResponse = getCorrectComponent("XWriterResponse", v_id);
-
-    // let response_pane = null;
-    // switch (this.props.task_state) {
-    //   case "done":
-    //     response_pane = <XDoneResponse {...this.props} />;
-    //     break;
-    //   default:
-    //     response_pane = <WriterResponse {...this.props} />;
-    //     break;
-    // }
 
     let response_pane = null;
     switch (this.props.chat_state) {
