@@ -64,7 +64,6 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                 self.evaluator_0 = agent
             else:  # 'Evaluator'
                 self.evaluator_1 = agent
-        # import pdb; pdb.set_trace()
         self.writers = [self.writer_0, self.writer_1]
         self.evaluators = [self.evaluator_0, self.evaluator_1]
         self.episodeDone = False
@@ -114,8 +113,6 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                 if hypothesis is not None:
                     self.hypotheses.append(hypothesis)
                     self.writers_copy.remove(writer)
-                    print(len(self.writers_copy))
-                    print(self.hypotheses)
 
                     if len(self.writers_copy) == 0:
                         self.turns +=1
@@ -147,44 +144,38 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
             semi_turn = 0
             if semi_turn == 0:
                 for evaluator in self.evaluators_copy:
-                    evaluation = evaluator.act(blocking=False, ranker=True)
-                    if evaluation is not None:
-                        self.ents.append(evaluation)
+                    evaluation0 = evaluator.act(blocking=False)
+                    if evaluation0 is not None:
+                        self.ents.append(evaluation0)
                         self.evaluators_copy.remove(evaluator)
-                        print(len(self.evaluators_copy))
-                        print(self.ents)
 
                         if len(self.evaluators_copy) == 0:
-                            if self.ents[0]['text'] == self.ents[1]['text']:
-                                for evaluator in self.evaluators:
-                                    evaluator.observe({'id':'Agreement', 'text':'You agreed! Bonus'})
-                            self.evaluator_0.observe(self.writer0_contradict)
-                            self.evaluator_1.observe(self.writer1_contradict)
+                            for evaluator in self.evaluators:
+                                evaluator.observe({'id':'Label', 'text':'Definitely incorrect'})
+                                evaluator.observe(self.writer0_contradict)
+                                evaluator.observe(self.writer1_contradict)
                             semi_turn += 1
             if semi_turn == 1:
                 for evaluator in self.evaluators_copy_c:
-                    evaluation = evaluator.act(blocking=False,ranker=True)
-                    if evaluation is not None:
-                        self.conts.append(evaluation)
+                    evaluation1 = evaluator.act(blocking=False)
+                    # import pdb; pdb.set_trace()
+                    if evaluation1 is not None:
+                        self.conts.append(evaluation1)
                         self.evaluators_copy_c.remove(evaluator)
                         print(len(self.evaluators_copy_c))
-                        print(self.conts)
 
                         if len(self.evaluators_copy_c) == 0:
-                            if self.conts[0]['text'] == self.conts[1]['text']:
-                                for evaluator in self.evaluators:
-                                    evaluator.observe({'id':'Agreement', 'text':'You agreed! Bonus'})
-                            self.evaluator_0.observe(self.writer0_neutral)
-                            self.evaluator_1.observe(self.writer1_neutral)
+                            for evaluator in self.evaluators:
+                                evaluator.observe({'id':'Label', 'text':'Neither definitely correct nor definitely incorrect'})
+                                evaluator.observe(self.writer0_neutral)
+                                evaluator.observe(self.writer1_neutral)
                             semi_turn += 1
             if semi_turn == 2:
                 for evaluator in self.evaluators_copy_n:
-                    evaluation = evaluator.act(blocking=False)
-                    if evaluation is not None:
-                        self.neuts.append(evaluation)
+                    evaluation2 = evaluator.act(blocking=False)
+                    if evaluation2 is not None:
+                        self.neuts.append(evaluation2)
                         self.evaluators_copy_n.remove(evaluator)
-                        print(len(self.evaluators_copy_n))
-                        print(self.neuts)
 
                         if len(self.evaluators_copy_n) == 0:
                             if self.neuts[0]['text'] == self.neuts[1]['text']:
@@ -192,49 +183,49 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                                     evaluator.observe({'id':'Agreement', 'text':'You agreed! Bonus'})
                             self.episodeDone = True
 
-        if self.turns == 4:
-            for evaluator in self.evaluators:
-                evaluator.observe({'id':'Label', 'text':'Definitely correct'})
-                evaluator.observe(self.writer0_contradict)
-                evaluator.observe(self.writer1_contradict)
-            self.turns += 1
+        # if self.turns == 4:
+        #     for evaluator in self.evaluators:
+        #         evaluator.observe({'id':'Label', 'text':'Definitely correct'})
+        #         evaluator.observe(self.writer0_contradict)
+        #         evaluator.observe(self.writer1_contradict)
+        #     self.turns += 1
 
-        if self.turns == 5:
-            for evaluator in self.evaluators_copy_c:
-                evaluation = evaluator.act(blocking=False)
-                if evaluation is not None:
-                    self.conts.append(evaluation)
-                    self.evaluators_copy_c.remove(evaluator)
-                    print(len(self.evaluators_copy_c))
-                    print(self.conts)
+        # if self.turns == 5:
+        #     for evaluator in self.evaluators_copy_c:
+        #         evaluation = evaluator.act(blocking=False)
+        #         if evaluation is not None:
+        #             self.conts.append(evaluation)
+        #             self.evaluators_copy_c.remove(evaluator)
+        #             print(len(self.evaluators_copy_c))
+        #             print(self.conts)
 
-                    if len(self.evaluators_copy_c) == 0:
-                        if self.conts[0]['text'] == self.conts[1]['text']:
-                            for evaluator in self.evaluators:
-                                evaluator.observe({'id':'Agreement', 'text':'You agreed! Bonus'})
-                        self.turns +=1
+        #             if len(self.evaluators_copy_c) == 0:
+        #                 if self.conts[0]['text'] == self.conts[1]['text']:
+        #                     for evaluator in self.evaluators:
+        #                         evaluator.observe({'id':'Agreement', 'text':'You agreed! Bonus'})
+        #                 self.turns +=1
 
-        if self.turns == 6:
-            for evaluator in self.evaluators:
-                evaluator.observe({'id':'Label', 'text':'Definitely correct'})
-                evaluator.observe(self.writer0_neutral)
-                evaluator.observe(self.writer1_neutral)
-            self.turns += 1
+        # if self.turns == 6:
+        #     for evaluator in self.evaluators:
+        #         evaluator.observe({'id':'Label', 'text':'Definitely correct'})
+        #         evaluator.observe(self.writer0_neutral)
+        #         evaluator.observe(self.writer1_neutral)
+        #     self.turns += 1
 
-        if self.turns == 7:
-            for evaluator in self.evaluators_copy_n:
-                evaluation = evaluator.act(blocking=False)
-                if evaluation is not None:
-                    self.neuts.append(evaluation)
-                    self.evaluators_copy_n.remove(evaluator)
-                    print(len(self.evaluators_copy_n))
-                    print(self.neuts)
+        # if self.turns == 7:
+        #     for evaluator in self.evaluators_copy_n:
+        #         evaluation = evaluator.act(blocking=False)
+        #         if evaluation is not None:
+        #             self.neuts.append(evaluation)
+        #             self.evaluators_copy_n.remove(evaluator)
+        #             print(len(self.evaluators_copy_n))
+        #             print(self.neuts)
 
-                    if len(self.evaluators_copy_n) == 0:
-                        if self.neuts[0]['text'] == self.neuts[1]['text']:
-                            for evaluator in self.evaluators:
-                                evaluator.observe({'id':'Agreement', 'text':'You agreed! Bonus'})
-                        self.episodeDone = True
+        #             if len(self.evaluators_copy_n) == 0:
+        #                 if self.neuts[0]['text'] == self.neuts[1]['text']:
+        #                     for evaluator in self.evaluators:
+        #                         evaluator.observe({'id':'Agreement', 'text':'You agreed! Bonus'})
+        #                 self.episodeDone = True
 
 
     def episode_done(self):
