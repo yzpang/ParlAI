@@ -145,73 +145,66 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
 
         if self.turns == 3:
             # Rankers rank all 3 sets of hypotheses
-            
             semi_turn = 0
             if semi_turn == 0:
                 for evaluator in self.evaluators_copy:
-                    evaluation0 = evaluator.act(blocking=False)
-                    if evaluation0 is not None:
-                        self.ents.append(evaluation0)
+                    evaluation_e = evaluator.act(blocking=False)
+                    if evaluation_e is not None:
+                        self.ents.append(evaluation_e)
                         self.evaluators_copy.remove(evaluator)
 
                         if len(self.evaluators_copy) == 0:
                             for evaluator in self.evaluators:
                                 evaluator.observe({'id':'Label', 'text':'Definitely incorrect'})
                             self.map_contradict = self.observe_hypotheses(self.writer0_contradict, self.writer1_contradict)
-
                             semi_turn += 1
             
             if semi_turn == 1:
-                for evaluator in self.evaluators_copy_c:
-                    evaluation = evaluator.act(blocking=False)
-                    # The (nested) while loops below are a hack
-                    # The system stops querying the HIT for messages without these loops
-                    # To-do: investigate root cause and fix
-                    while evaluation is None:
-                        evaluation = evaluator.act(blocking=False)
-                    if evaluation is not None:
-                        self.conts.append(evaluation)
-                        self.evaluators_copy_c.remove(evaluator)
+                # The (nested) while loops below are a hack
+                # The system stops querying the HIT for messages without these loops
+                # To-do: investigate root cause and fix
 
-                        if len(self.evaluators_copy_c) != 0:
-                            evaluator = self.evaluators_copy_c[0]
-                            evaluation = evaluator.act(blocking=False)
-                            while evaluation is None:
-                                evaluation = evaluator.act(blocking=False)
-                            if evaluation is not None:
-                                self.conts.append(evaluation)
-                                self.evaluators_copy_c.remove(evaluator)
-
-                        if len(self.evaluators_copy_c) == 0:
-                            for evaluator in self.evaluators:
-                                evaluator.observe({'id':'Label', 'text':'Neither definitely correct nor definitely incorrect'})
-                            self.map_neutral = self.observe_hypotheses(self.writer0_neutral, self.writer1_neutral)
-
-                            semi_turn += 1
+                evaluation0_c, evaluation1_c = None, None
+                # Continuously query both rankers
+                while evaluation0_c is None and evaluation1_c is None:
+                    evaluation0_c = self.evaluators_copy_c[0].act(blocking=False)
+                    evaluation1_c = self.evaluators_copy_c[1].act(blocking=False)
+                # Query remaining ranker
+                if evaluation0_c or evaluation1_c is not None:
+                    while evaluation0_c is None:
+                        evaluation0_c = self.evaluators_copy_c[0].act(blocking=False)
+                    while evaluation1_c is None:
+                        evaluation1_c = self.evaluators_copy_c[1].act(blocking=False)
+                    if evaluation0_c is not None and evaluation1_c is not None:
+                        self.conts.append(evaluation0_c)
+                        self.conts.append(evaluation1_c)
+                        self.evaluators_copy_c = []
+                        for evaluator in self.evaluators:
+                            evaluator.observe({'id':'Label', 'text':'Neither definitely correct nor definitely incorrect'})
+                        self.map_neutral = self.observe_hypotheses(self.writer0_neutral, self.writer1_neutral)
+                        semi_turn += 1
             
             if semi_turn == 2:
-                for evaluator in self.evaluators_copy_n:
-                    evaluation = evaluator.act(blocking=False)
-                    # The (nested) while loops below are a hack
-                    # The system stops querying the HIT for messages without these loops
-                    # To-do: investigate root cause and fix
-                    while evaluation is None:
-                        evaluation = evaluator.act(blocking=False)
-                    if evaluation is not None:
-                        self.neuts.append(evaluation)
-                        self.evaluators_copy_n.remove(evaluator)
+                # The (nested) while loops below are a hack
+                # The system stops querying the HIT for messages without these loops
+                # To-do: investigate root cause and fix
 
-                        if len(self.evaluators_copy_n) != 0:
-                            evaluator = self.evaluators_copy_n[0]
-                            evaluation = evaluator.act(blocking=False)
-                            while evaluation is None:
-                                evaluation = evaluator.act(blocking=False)
-                            if evaluation is not None:
-                                self.neuts.append(evaluation)
-                                self.evaluators_copy_n.remove(evaluator)
-
-                        if len(self.evaluators_copy_n) == 0:
-                            self.turns += 1
+                evaluation0_n, evaluation1_n = None, None
+                # Continuously query both rankers
+                while evaluation0_n is None and evaluation1_n is None:
+                    evaluation0_n = self.evaluators_copy_n[0].act(blocking=False)
+                    evaluation1_n = self.evaluators_copy_n[1].act(blocking=False)
+                # Query remaining ranker
+                if evaluation0_n or evaluation1_n is not None:
+                    while evaluation0_n is None:
+                        evaluation0_n = self.evaluators_copy_n[0].act(blocking=False)
+                    while evaluation1_n is None:
+                        evaluation1_n = self.evaluators_copy_n[1].act(blocking=False)
+                    if evaluation0_n is not None and evaluation1_n is not None:
+                        self.neuts.append(evaluation0_n)
+                        self.neuts.append(evaluation1_n)
+                        self.evaluators_copy_n = []
+                        self.turns += 1
 
         if self.turns == 4:
             # Give feedback to rankers and writers
@@ -271,7 +264,6 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
     def observe_hypotheses(self, writer0_hyp, writer1_hyp):
         # Flip a coin and switch order of claims if flip=1
         flip = random.randint(0,1)
-        print(flip)
         if flip == 0:
             mappy = self.noflip
             for evaluator in self.evaluators:
