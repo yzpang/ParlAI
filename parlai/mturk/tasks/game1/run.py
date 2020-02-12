@@ -112,6 +112,7 @@ def main():
             # run the world to completion
             while not world.episode_done():
                 world.parley()
+            # import pdb; pdb.set_trace()
 
             # shutdown and review the work
             world.shutdown()
