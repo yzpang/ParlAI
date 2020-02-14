@@ -14,6 +14,7 @@ from parlai.mturk.tasks.game1.task_config import (
     task_config,
 )
 import os
+import importlib
 
 
 def main():
@@ -31,6 +32,15 @@ def main():
 
     # append the contents of task_config.py to the configuration
     opt.update(task_config)
+
+    # Initialize a teacher agent, which we will get premises from
+    module_name = 'parlai.tasks.squad2.agents'
+    class_name = 'DefaultTeacher'
+    my_module = importlib.import_module(module_name)
+    task_class = getattr(my_module, class_name)
+    task_opt = opt.copy()
+    task_opt['datatype'] = 'train'
+    task_opt['datapath'] = opt['datapath']
 
     # Select an agent_id that worker agents will be assigned in their world
     mturk_agent_roles = ['Writer0', 'Writer1', 'Evaluator0', 'Evaluator1']#, 'Evaluator-1']
@@ -107,8 +117,10 @@ def main():
         global run_conversation
 
         def run_conversation(mturk_manager, opt, workers):
+            # Create a task agent to get prompts from SQuAD 2.0
+            task = task_class(task_opt)
             # Create the task world
-            world = MultiRoleAgentWorld(opt=opt, mturk_agents=workers)
+            world = MultiRoleAgentWorld(opt=opt, task=task, mturk_agents=workers)
             # run the world to completion
             while not world.episode_done():
                 world.parley()

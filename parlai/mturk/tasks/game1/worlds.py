@@ -53,7 +53,8 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
 
     collector_agent_id = 'Moderator'
 
-    def __init__(self, opt, mturk_agents):
+    def __init__(self, opt, task, mturk_agents):
+        self.task = task
         self.mturk_agents = mturk_agents
         for agent in mturk_agents:
             if agent.demo_role == 'Writer0':
@@ -82,9 +83,11 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
     def parley(self):
         if self.meta_turn < self.max_meta_turns:
             if self.turns == 0:
+                squad_example = self.task.act()
+                premise = '\n'.join(squad_example['text'].split('\n')[:-1])
                 self.prompt = {
                         'id': 'Prompt',
-                        'text': "Norman architecture typically stands out as a new stage in the architectural history of the regions they subdued. They spread a unique Romanesque idiom to England and Italy, and the encastellation of these regions with keeps in their north French style fundamentally altered the military landscape. Their style was characterised by rounded arches, particularly over windows and doorways, and massive proportions.'}, {'qas': [{'question': 'What architecture type came after Norman in England?"
+                        'text': premise
                     }
 
                 # Tell workers what roles they've been assigned
@@ -333,7 +336,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
             'rank-c': self.conts,
             'rank-n': self.neuts,
         }
-    
+
     def episode_done(self):
         return self.episodeDone
 
