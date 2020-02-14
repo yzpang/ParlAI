@@ -810,6 +810,76 @@ class ResponsePaneyEvaluator extends React.Component {
   }
 }
 
+class WriterMessageList extends React.Component {
+  makeMessages() {
+    let agent_id = this.props.agent_id;
+    let messages = this.props.messages;
+    // Handles rendering messages from both the user and anyone else
+    // on the thread - agent_ids for the sender of a message exist in
+    // the m.id field.
+    let XChatMessage = getCorrectComponent('XChatMessage', this.props.v_id);
+    let onClickMessage = this.props.onClickMessage;
+    if (typeof onClickMessage !== 'function') {
+      onClickMessage = idx => {};
+    }
+    return messages.map((m, idx) => (
+      <div key={m.message_id} onClick={() => onClickMessage(idx)}>
+        <XChatMessage
+          is_self={m.id == agent_id}
+          agent_id={m.id}
+          message={m.text + m.task_data}
+          task_data={m.task_data}
+          message_id={m.message_id}
+          duration={this.props.is_review ? m.duration : undefined}
+        />
+      </div>
+    ));
+  }
+
+  render() {
+    return (
+      <div id="message_thread" style={{ width: '100%' }}>
+        {this.makeMessages()}
+      </div>
+    );
+  }
+}
+
+class EvaluatorMessageList extends React.Component {
+  makeMessages() {
+    let agent_id = this.props.agent_id;
+    let messages = this.props.messages;
+    // Handles rendering messages from both the user and anyone else
+    // on the thread - agent_ids for the sender of a message exist in
+    // the m.id field.
+    let XChatMessage = getCorrectComponent('XChatMessage', this.props.v_id);
+    let onClickMessage = this.props.onClickMessage;
+    if (typeof onClickMessage !== 'function') {
+      onClickMessage = idx => {};
+    }
+    return messages.map((m, idx) => (
+      <div key={m.message_id} onClick={() => onClickMessage(idx)}>
+        <XChatMessage
+          is_self={m.id == agent_id}
+          agent_id={m.id}
+          message={m.text}
+          task_data={m.task_data}
+          message_id={m.message_id}
+          duration={this.props.is_review ? m.duration : undefined}
+        />
+      </div>
+    ));
+  }
+
+  render() {
+    return (
+      <div id="message_thread" style={{ width: '100%' }}>
+        {this.makeMessages()}
+      </div>
+    );
+  }
+}
+
 
 var IdleResponseHolder = {
   // default: leave blank to use original default when no ids match
@@ -840,8 +910,16 @@ var WaitingResponseHolder = {
   Evaluator1: EvaluatorWaitingMessage,
 }
 
+var MessageListHolder = {
+  Writer0: WriterMessageList,
+  Writer1: WriterMessageList,
+  Evaluator0: EvaluatorMessageList,
+  Evaluator1: EvaluatorMessageList,
+}
+
 export default {
   // ComponentName: CustomReplacementComponentMap
   XWaitingMessage: WaitingResponseHolder,
   XResponsePane:  ResponsePaneHolder,
+  XMessageList: MessageListHolder,
 };
