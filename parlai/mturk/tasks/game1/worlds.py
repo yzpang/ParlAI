@@ -7,6 +7,7 @@ from parlai.mturk.core.worlds import MTurkOnboardWorld, MTurkTaskWorld
 import threading
 import random
 import copy
+import time
 # import pandas as pd
 
 class WriterOnboardingWorld(MTurkOnboardWorld):
@@ -67,7 +68,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
         self.writers = [self.writer_0, self.writer_1]
         self.evaluators = [self.evaluator_0, self.evaluator_1]
         self.episodeDone = False
-        self.max_meta_turns = 5
+        self.max_meta_turns = 2
         self.meta_turn = 0
         self.interim_data = []
         self.turns = 0
@@ -85,20 +86,26 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                         'id': 'Prompt',
                         'text': "Norman architecture typically stands out as a new stage in the architectural history of the regions they subdued. They spread a unique Romanesque idiom to England and Italy, and the encastellation of these regions with keeps in their north French style fundamentally altered the military landscape. Their style was characterised by rounded arches, particularly over windows and doorways, and massive proportions.'}, {'qas': [{'question': 'What architecture type came after Norman in England?"
                     }
-                for writer in self.writers:
-                    writer.observe({'id':'Role: ', 'text': 'Writer'})
 
-                for evaluator in self.evaluators:
-                    evaluator.observe({'id':'Role: ', 'text': 'Ranker'})
+                # Tell workers what roles they've been assigned
+                if self.meta_turn == 0:
+                    for writer in self.writers:
+                        writer.observe({'id':'Role: ', 'text': 'Writer'})
+
+                    for evaluator in self.evaluators:
+                        evaluator.observe({'id':'Role: ', 'text': 'Ranker'})
 
                 for agent in self.mturk_agents:
                     agent.observe(self.prompt)
 
+                # Make copies of objects of workers, we need this to have
+                # concurrent work on HITs
                 self.writers_copy = self.writers.copy()
                 self.evaluators_copy = self.evaluators.copy()
                 self.evaluators_copy_n = self.evaluators.copy()
                 self.evaluators_copy_c = self.evaluators.copy()
                 
+                # Lists where we will store responses
                 self.hypotheses = []
                 self.ents = []
                 self.neuts = []
@@ -213,22 +220,34 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
 
                 label_types = ['Definitely Correct', 'Definitely Incorrect', 'Neither']
                 maps = [self.map_entail, self.map_contradict, self.map_neutral]
+                eval0_justifications = []
+                eval1_justifications = []
                 for i, rankings in enumerate([self.ents, self.conts, self.neuts]):
                     label = label_types[i]
                     writer_bonus_message = {'id': 'Bonus for ' + label, 'text': 'You ranked 1st! Bonus = $' + str(self.writer_bonus) +'.'}
                     agrm_message = {'id': 'Bonus for ' + label, 'text': 'You agreed with the other ranker! Bonus = $' + str(self.ranker_bonus) + '.'}
 
                     # Map the selected choices to "unflip" the ordering
+                    # and collect ranker justifications
                     if rankings[1]['id'] == "Evaluator1":
                         rankings[1]['text'] = maps[i][rankings[1]['text']]
+                        # justifications
+                        if rankings[0]['task_data'] is not '':
+                            eval0_justifications.append(label + ': ' + rankings[0]['task_data'])
+                        if rankings[1]['task_data'] is not '':
+                            eval1_justifications.append(label + ': ' + rankings[1]['task_data'])
                     else:
                         rankings[0]['text'] = maps[i][rankings[0]['text']]
+                        # justifications
+                        if rankings[0]['task_data'] is not '':
+                            eval1_justifications.append(label + ': ' + rankings[0]['task_data'])
+                        if rankings[1]['task_data'] is not '':
+                            eval0_justifications.append(label + ': ' + rankings[1]['task_data'])
 
                     # Show messages about bonuses
                     if rankings[0]['text'] == rankings[1]['text']:
                         for evaluator in self.evaluators:
                             evaluator.observe(agrm_message)
-
                         if rankings[0]['text'] == 'Claim 1':
                             self.writer_0.observe(writer_bonus_message)
                         else:
@@ -237,10 +256,19 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                         # Rankers did not agree
                         pass
 
+
                 self.interim_data.append(self.get_intermediate_task_data())
 
+                # Show rankers partner's justifications
+                if len(eval0_justifications) != 0:
+                    self.evaluator_0.observe({'id':'Justifications from other ranker', 'text': "\n"+"\n".join(eval1_justifications)})
+                if len(eval1_justifications) != 0:
+                    self.evaluator_1.observe({'id':'Justifications from other ranker', 'text': "\n"+"\n".join(eval0_justifications)})
+
                 # Pause before showing next prompt
-                sleep 3
+                if (len(eval0_justifications) + len(eval1_justifications)) != 0:
+                    time.sleep(4)
+                time.sleep(3)
                 self.meta_turn += 1
                 self.turns = 0
 
@@ -305,7 +333,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
             'rank-c': self.conts,
             'rank-n': self.neuts,
         }
-
+    
     def episode_done(self):
         return self.episodeDone
 

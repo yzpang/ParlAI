@@ -667,13 +667,26 @@ class EvaluatorResponse extends React.Component {
       </div>
     );
 
+    // let submit_button = (
+    //   <Button
+    //     className="btn btn-primary"
+    //     style={submit_style}
+    //     id="id_send_msg_button"
+    //     disabled={
+    //       this.state.claimChoice == '' || this.state.validation1 = '' || this.state.validation2 = '' || !this.props.active || this.state.sending
+    //     }
+    //     onClick={() => this.tryMessageSend()}
+    //   >
+    //     Submit
+    //   </Button>
+    // );
     let submit_button = (
       <Button
         className="btn btn-primary"
         style={submit_style}
         id="id_send_msg_button"
         disabled={
-          !this.props.active || this.state.sending
+          this.state.claimChoice == '' || this.state.validation1 == '' || this.state.validation2 == '' || !this.props.active || this.state.sending
         }
         onClick={() => this.tryMessageSend()}
       >
