@@ -810,42 +810,7 @@ class ResponsePaneyEvaluator extends React.Component {
   }
 }
 
-class WriterMessageList extends React.Component {
-  makeMessages() {
-    let agent_id = this.props.agent_id;
-    let messages = this.props.messages;
-    // Handles rendering messages from both the user and anyone else
-    // on the thread - agent_ids for the sender of a message exist in
-    // the m.id field.
-    let XChatMessage = getCorrectComponent('XChatMessage', this.props.v_id);
-    let onClickMessage = this.props.onClickMessage;
-    if (typeof onClickMessage !== 'function') {
-      onClickMessage = idx => {};
-    }
-    return messages.map((m, idx) => (
-      <div key={m.message_id} onClick={() => onClickMessage(idx)}>
-        <XChatMessage
-          is_self={m.id == agent_id}
-          agent_id={m.id}
-          message={m.text + m.task_data}
-          task_data={m.task_data}
-          message_id={m.message_id}
-          duration={this.props.is_review ? m.duration : undefined}
-        />
-      </div>
-    ));
-  }
-
-  render() {
-    return (
-      <div id="message_thread" style={{ width: '100%' }}>
-        {this.makeMessages()}
-      </div>
-    );
-  }
-}
-
-class EvaluatorMessageList extends React.Component {
+class MessageList extends React.Component {
   makeMessages() {
     let agent_id = this.props.agent_id;
     let messages = this.props.messages;
@@ -864,6 +829,7 @@ class EvaluatorMessageList extends React.Component {
           agent_id={m.id}
           message={m.text}
           task_data={m.task_data}
+          task_data2={m.task_data2}
           message_id={m.message_id}
           duration={this.props.is_review ? m.duration : undefined}
         />
@@ -875,6 +841,149 @@ class EvaluatorMessageList extends React.Component {
     return (
       <div id="message_thread" style={{ width: '100%' }}>
         {this.makeMessages()}
+      </div>
+    );
+  }
+}
+
+// class EvaluatorMessageList extends React.Component {
+//   makeMessages() {
+//     let agent_id = this.props.agent_id;
+//     let messages = this.props.messages;
+//     // Handles rendering messages from both the user and anyone else
+//     // on the thread - agent_ids for the sender of a message exist in
+//     // the m.id field.
+//     let XChatMessage = getCorrectComponent('XChatMessage', this.props.v_id);
+//     let onClickMessage = this.props.onClickMessage;
+//     if (typeof onClickMessage !== 'function') {
+//       onClickMessage = idx => {};
+//     }
+//     return messages.map((m, idx) => (
+//       <div key={m.message_id} onClick={() => onClickMessage(idx)}>
+//         <XChatMessage
+//           is_self={m.id == agent_id}
+//           agent_id={m.id}
+//           message={m.text}
+//           task_data={m.task_data}
+//           task_data2={}
+//           message_id={m.message_id}
+//           duration={this.props.is_review ? m.duration : undefined}
+//         />
+//       </div>
+//     ));
+//   }
+
+//   render() {
+//     return (
+//       <div id="message_thread" style={{ width: '100%' }}>
+//         {this.makeMessages()}
+//       </div>
+//     );
+//   }
+// }
+
+class WriterChatMessage extends React.Component {
+  render() {
+    let float_loc = 'left';
+    let alert_class = 'alert-warning';
+    if (this.props.is_self) {
+      float_loc = 'right';
+      alert_class = 'alert-info';
+    }
+    let duration = null;
+    if (this.props.duration !== undefined) {
+      let duration_seconds = Math.floor(this.props.duration / 1000) % 60;
+      let duration_minutes = Math.floor(this.props.duration / 60000);
+      let min_text = duration_minutes > 0 ? duration_minutes + ' min' : '';
+      let sec_text = duration_seconds > 0 ? duration_seconds + ' sec' : '';
+      duration = (
+        <small>
+          <br />
+          <i>Duration: </i>
+          {min_text + ' ' + sec_text}
+        </small>
+      );
+    }
+
+    return (
+      <div>
+      <div className={'row'} style={{ marginLeft: '0', marginRight: '0' }}>
+        <div
+          className={'alert ' + alert_class}
+          role="alert"
+          style={{ float: float_loc, display: 'table' }}
+        >
+          <span style={{ fontSize: '16px', whiteSpace: 'pre-wrap' }}>
+            <b>{this.props.agent_id}</b>: {this.props.message}
+          </span>
+          {duration}
+        </div>
+      </div>
+      { this.props.task_data && (
+        <div>
+        <div className={'row'} style={{ marginLeft: '0', marginRight: '0' }}>
+          <div
+            className={'alert ' + alert_class}
+            role="alert"
+            style={{ float: float_loc, display: 'table' }}
+          >
+            <span style={{ fontSize: '16px', whiteSpace: 'pre-wrap' }}>
+                <b>{this.props.agent_id}</b>: {this.props.task_data}
+            </span>
+          </div>
+        </div>
+        <div className={'row'} style={{ marginLeft: '0', marginRight: '0' }}>
+          <div
+            className={'alert ' + alert_class}
+            role="alert"
+            style={{ float: float_loc, display: 'table' }}
+          >
+            <span style={{ fontSize: '16px', whiteSpace: 'pre-wrap' }}>
+                <b>{this.props.agent_id}</b>: {this.props.task_data2}
+            </span>
+          </div>
+        </div>
+        </div>
+      )}
+      </div>
+    );
+  }
+}
+
+class CoreChatMessage extends React.Component {
+  render() {
+    let float_loc = 'left';
+    let alert_class = 'alert-warning';
+    if (this.props.is_self) {
+      float_loc = 'right';
+      alert_class = 'alert-info';
+    }
+    let duration = null;
+    if (this.props.duration !== undefined) {
+      let duration_seconds = Math.floor(this.props.duration / 1000) % 60;
+      let duration_minutes = Math.floor(this.props.duration / 60000);
+      let min_text = duration_minutes > 0 ? duration_minutes + ' min' : '';
+      let sec_text = duration_seconds > 0 ? duration_seconds + ' sec' : '';
+      duration = (
+        <small>
+          <br />
+          <i>Duration: </i>
+          {min_text + ' ' + sec_text}
+        </small>
+      );
+    }
+    return (
+      <div className={'row'} style={{ marginLeft: '0', marginRight: '0' }}>
+        <div
+          className={'alert ' + alert_class}
+          role="alert"
+          style={{ float: float_loc, display: 'table' }}
+        >
+          <span style={{ fontSize: '16px', whiteSpace: 'pre-wrap' }}>
+            <b>{this.props.agent_id}</b>: {this.props.message}
+          </span>
+          {duration}
+        </div>
       </div>
     );
   }
@@ -910,16 +1019,24 @@ var WaitingResponseHolder = {
   Evaluator1: EvaluatorWaitingMessage,
 }
 
-var MessageListHolder = {
-  Writer0: WriterMessageList,
-  Writer1: WriterMessageList,
-  Evaluator0: EvaluatorMessageList,
-  Evaluator1: EvaluatorMessageList,
+// var MessageListHolder = {
+//   Writer0: NewMessageList,
+//   Writer1: NewMessageList,
+//   Evaluator0: NewMessageList,
+//   Evaluator1: NewMessageList,
+// }
+
+var ChatMessageHolder = {
+  Writer0: WriterChatMessage,
+  Writer1: WriterChatMessage,
+  Evaluator0: CoreChatMessage,
+  Evaluator1: CoreChatMessage,
 }
 
 export default {
   // ComponentName: CustomReplacementComponentMap
   XWaitingMessage: WaitingResponseHolder,
   XResponsePane:  ResponsePaneHolder,
-  XMessageList: MessageListHolder,
+  XMessageList: { default: MessageList },
+  XChatMessage: ChatMessageHolder,
 };
