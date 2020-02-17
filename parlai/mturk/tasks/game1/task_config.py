@@ -46,9 +46,9 @@ In this task, we have two types of roles: writers and evaluators. Please read th
 	<li>Write one sentence that is&nbsp;<strong>definitely incorrect</strong>&nbsp;about the situation or event in the prompt.</li>
 	<li>Write one sentence that is&nbsp;<strong>neither</strong> definitely correct nor incorrect about the situation or event in the prompt.</li>
 </ul>
-<font color="red">We encourage you to write sentences that are creative and require non-trivial kinds of inference.</font> You bonuses will be based on how evaluators rank you, they will be ranking you based on creativity of your sentences.
+<font color="red">We encourage you to write sentences that are creative and require non-trivial kinds of inference.</font> You bonuses will be based on how evaluators rank you, they will be ranking you based on creativity of your sentences.<br>
 
-<p><strong>Evaluators:</strong> you will be shown a prompt and 3 possible hypothesis sentences for the prompt with the same type of entailment label (the hypotheses are written by other MTurk workers who are in the writer pool). The three types of entailment labels---definitely correct, definitely incorrect, and neither---are explained above in the instructions for writers. <font color="red">Your task as evaluators is to rank the hypothesis sentences in terms of creativity.</font> You bonuses will be based on agreement with other evaluators.</p>
+<p><strong>Evaluators:</strong> you will be shown a prompt and 3 possible hypothesis sentences for the prompt with the same type of entailment label (the hypotheses are written by other MTurk workers who are in the writer pool). The three types of entailment labels---definitely correct, definitely incorrect, and neither---are explained above in the instructions for writers. You will be shown the claims the writers wrote and your first task is to decide if the claim fits the label and the prompt. Then, <font color="red">your task as evaluators is to rank the hypothesis sentences in terms of creativity.</font> Your bonuses will be based on agreement with other evaluators.</p>
 
 
 <u><strong> Examples </u></strong>
@@ -105,5 +105,7 @@ As a writer, you will be given bonuses based on how your hypothesis sentences ar
 </p>
 <!-- TODO: COMPLETE THIS. ADD BONUS BREAKDOWN -->
 
+For more questions please refer to this <a href="https://woollysocks.github.io/NLI-games-faqs/two-faq.html" target="_blank">FAQ page</a>.
+<br>
 If you are ready, please click "Accept HIT" to start this task.
 '''
