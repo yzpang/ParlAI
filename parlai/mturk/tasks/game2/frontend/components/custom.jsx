@@ -386,14 +386,6 @@ class EvaluatorResponse extends React.Component {
       );
     }
   }
-  // tryMessageSend() {
-  //   if (this.props.active && !this.state.sending) {
-  //     this.setState({ sending: true });
-  //     this.props.onMessageSend(this.state.entailText, this.state.validation1, {}, () =>
-  //       this.setState({ validation1: '', entailText: '', sending: false })
-  //     );
-  //   }
-  // }
 
   handleInputChange(event) {
     console.log(event)
@@ -719,7 +711,7 @@ class ResponsePaneWriter extends React.Component {
       case 'waiting':
         if (this.props.task_data && this.props.task_data['respond_with_form']) {
           response_pane = (
-            <WriterResponse
+            <EvaluatorResponse
               {...this.props}
               active={this.props.chat_state == 'text_input'}
             />
@@ -1014,16 +1006,18 @@ var WaitingResponseHolder = {
 // }
 
 var ChatMessageHolder = {
-  Writer0: WriterChatMessage,
-  Writer1: WriterChatMessage,
+  Writer0: CoreChatMessage, //WriterChatMessage,
+  Writer1: CoreChatMessage, //WriterChatMessage,
   Evaluator0: CoreChatMessage,
   Evaluator1: CoreChatMessage,
 }
 
 export default {
   // ComponentName: CustomReplacementComponentMap
-  XWaitingMessage: WaitingResponseHolder,
-  XResponsePane:  ResponsePaneHolder,
+  // XWaitingMessage: WaitingResponseHolder,
+  XWaitingMessage: { default: WriterWaitingMessage },
+  // XResponsePane:  ResponsePaneHolder,
+  XResponsePane: { default: ResponsePaneWriter },
   XMessageList: { default: MessageList },
   XChatMessage: ChatMessageHolder,
 };

@@ -4,13 +4,12 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 from parlai.core.params import ParlaiParser
-from parlai.mturk.tasks.game1.worlds import (
-    WriterOnboardingWorld,
-    EvaluatorOnboardingWorld,
+from parlai.mturk.tasks.game2.worlds import (
+    OnboardingWorld,
     MultiRoleAgentWorld,
 )
 from parlai.mturk.core.mturk_manager import MTurkManager
-from parlai.mturk.tasks.game1.task_config import (
+from parlai.mturk.tasks.game2.task_config import (
     task_config,
 )
 import os
@@ -42,9 +41,15 @@ def main():
     task_opt = opt.copy()
     task_opt['datatype'] = 'train'
     task_opt['datapath'] = opt['datapath']
+    task_opt['num_agents'] = 4 # To-do: make this a command line parameter
 
     # Select an agent_id that worker agents will be assigned in their world
-    mturk_agent_roles = ['Writer0', 'Writer1', 'Evaluator0', 'Evaluator1']#, 'Evaluator-1']
+    persons = {}
+    mturk_agent_roles = []
+    for i in range(1,task_opt['num_agents']+1):
+        persons[i] = 'Person'+str(i)
+        mturk_agent_roles.append(persons[i])
+    # mturk_agent_roles = ['Person1', 'Person2', 'Person3', 'Person4']#
 
     # Instantiate an MTurkManager with the given options and a maximum number
     # of agents per world of 1 (based on the length of mturk_agent_ids)
@@ -67,10 +72,10 @@ def main():
         role_index += 1
         worker.update_agent_id('Onboarding {}'.format(role))
         worker.demo_role = role
-        if role == 'Writer0' or role == 'Writer1':
-            world = WriterOnboardingWorld(opt=opt, mturk_agent=worker)
-        else:
-            world = EvaluatorOnboardingWorld(opt=opt, mturk_agent=worker)
+        # if role == 'Writer0' or role == 'Writer1':
+        world = OnboardingWorld(opt=opt, mturk_agent=worker)
+        # else:
+        #     world = EvaluatorOnboardingWorld(opt=opt, mturk_agent=worker)
         while not world.episode_done():
             world.parley()
         world.shutdown()
