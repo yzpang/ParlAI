@@ -90,40 +90,40 @@ class Hourglass extends React.Component {
   }
 }
 
-class EvaluatorWaitingMessage extends React.Component {
-  render() {
-    let message_style = {
-      float: 'left',
-      display: 'table',
-      backgroundColor: '#fff',
-    };
-    let text = 'Waiting for the writers to compose their claims...';
-    if (this.props.world_state == 'waiting') {
-      text = 'Waiting to pair with a task...';
-    }
-    return (
-      <div
-        id="waiting-for-message"
-        className="row"
-        style={{ marginLeft: '0', marginRight: '0' }}
-      >
-        <div className="alert alert-warning" role="alert" style={message_style}>
-          <Hourglass />
-          <span style={{ fontSize: '16px' }}>{text}</span>
-        </div>
-      </div>
-    );
-  }
-}
+// class EvaluatorWaitingMessage extends React.Component {
+//   render() {
+//     let message_style = {
+//       float: 'left',
+//       display: 'table',
+//       backgroundColor: '#fff',
+//     };
+//     let text = 'Waiting for the writers to compose their claims...';
+//     if (this.props.world_state == 'waiting') {
+//       text = 'Waiting to pair with a task...';
+//     }
+//     return (
+//       <div
+//         id="waiting-for-message"
+//         className="row"
+//         style={{ marginLeft: '0', marginRight: '0' }}
+//       >
+//         <div className="alert alert-warning" role="alert" style={message_style}>
+//           <Hourglass />
+//           <span style={{ fontSize: '16px' }}>{text}</span>
+//         </div>
+//       </div>
+//     );
+//   }
+// }
 
-class WriterWaitingMessage extends React.Component {
+class WaitingMessage extends React.Component {
   render() {
     let message_style = {
       float: 'left',
       display: 'table',
       backgroundColor: '#fff',
     };
-    let text = 'Waiting for the rankers to rank your claims...';
+    let text = 'Waiting for someone else on the HIT to complete their task...';
     if (this.props.world_state == 'waiting') {
       text = 'Waiting to pair with a task...';
     }
@@ -695,7 +695,7 @@ class EvaluatorResponse extends React.Component {
 }
 
 
-class ResponsePaneWriter extends React.Component {
+class ResponsePane extends React.Component {
   render() {
     let v_id = this.props.v_id;
     let XDoneResponse = getCorrectComponent("XDoneResponse", v_id);
@@ -742,52 +742,52 @@ class ResponsePaneWriter extends React.Component {
   }
 }
 
-class ResponsePaneyEvaluator extends React.Component {
-  render() {
-    let v_id = this.props.v_id;
-    let XDoneResponse = getCorrectComponent("XDoneResponse", v_id);
-    let XFormResponse = getCorrectComponent('XFormResponse', v_id);
+// class ResponsePaneyEvaluator extends React.Component {
+//   render() {
+//     let v_id = this.props.v_id;
+//     let XDoneResponse = getCorrectComponent("XDoneResponse", v_id);
+//     let XFormResponse = getCorrectComponent('XFormResponse', v_id);
 
-    let response_pane = null;
-    switch (this.props.chat_state) {
-      case 'done':
-      case 'inactive':
-        response_pane = <XDoneResponse {...this.props} />;
-        break;
-      case 'text_input':
-      case 'waiting':
-        if (this.props.task_data && this.props.task_data['respond_with_form']) {
-          response_pane = (
-            <EvaluatorResponse
-              {...this.props}
-              active={this.props.chat_state == 'text_input'}
-            />
-          );
-        } else {
-          response_pane = (
-            <EvaluatorResponse
-              {...this.props}
-              active={this.props.chat_state == 'text_input'}
-            />
-          );
-        }
-        break;
-      case 'idle':
-      default:
-        response_pane = <EvaluatorIdleResponse {...this.props} />;
-        break;
-    }
+//     let response_pane = null;
+//     switch (this.props.chat_state) {
+//       case 'done':
+//       case 'inactive':
+//         response_pane = <XDoneResponse {...this.props} />;
+//         break;
+//       case 'text_input':
+//       case 'waiting':
+//         if (this.props.task_data && this.props.task_data['respond_with_form']) {
+//           response_pane = (
+//             <EvaluatorResponse
+//               {...this.props}
+//               active={this.props.chat_state == 'text_input'}
+//             />
+//           );
+//         } else {
+//           response_pane = (
+//             <EvaluatorResponse
+//               {...this.props}
+//               active={this.props.chat_state == 'text_input'}
+//             />
+//           );
+//         }
+//         break;
+//       case 'idle':
+//       default:
+//         response_pane = <EvaluatorIdleResponse {...this.props} />;
+//         break;
+//     }
 
-    return (
-      <div
-        id="right-bottom-pane"
-        style={{ width: "100%", backgroundColor: "#eee" }}
-      >
-        {response_pane}
-      </div>
-    );
-  }
-}
+//     return (
+//       <div
+//         id="right-bottom-pane"
+//         style={{ width: "100%", backgroundColor: "#eee" }}
+//       >
+//         {response_pane}
+//       </div>
+//     );
+//   }
+// }
 
 class MessageList extends React.Component {
   makeMessages() {
@@ -983,20 +983,20 @@ var TextResponseHolder = {
   'Onboarding Writer': WriterResponse,
 };
 
-var ResponsePaneHolder = {
-  // default: leave blank to use original default when no ids match
-  Writer0: ResponsePaneWriter,
-  Writer1: ResponsePaneWriter,
-  Evaluator0: ResponsePaneyEvaluator,
-  Evaluator1: ResponsePaneyEvaluator,
-};
+// var ResponsePaneHolder = {
+//   // default: leave blank to use original default when no ids match
+//   Writer0: ResponsePaneWriter,
+//   Writer1: ResponsePaneWriter,
+//   Evaluator0: ResponsePaneyEvaluator,
+//   Evaluator1: ResponsePaneyEvaluator,
+// };
 
-var WaitingResponseHolder = {
-  Writer0: WriterWaitingMessage,
-  Writer1: WriterWaitingMessage,
-  Evaluator0: EvaluatorWaitingMessage,
-  Evaluator1: EvaluatorWaitingMessage,
-}
+// var WaitingResponseHolder = {
+//   Writer0: WriterWaitingMessage,
+//   Writer1: WriterWaitingMessage,
+//   Evaluator0: EvaluatorWaitingMessage,
+//   Evaluator1: EvaluatorWaitingMessage,
+// }
 
 // var MessageListHolder = {
 //   Writer0: NewMessageList,
@@ -1015,9 +1015,9 @@ var ChatMessageHolder = {
 export default {
   // ComponentName: CustomReplacementComponentMap
   // XWaitingMessage: WaitingResponseHolder,
-  XWaitingMessage: { default: WriterWaitingMessage },
+  XWaitingMessage: { default: WaitingMessage },
   // XResponsePane:  ResponsePaneHolder,
-  XResponsePane: { default: ResponsePaneWriter },
+  XResponsePane: { default: ResponsePane },
   XMessageList: { default: MessageList },
   XChatMessage: ChatMessageHolder,
 };

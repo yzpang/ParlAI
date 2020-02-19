@@ -132,9 +132,11 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                 
                 # Lists where we will store responses
                 self.hypotheses = []
+                # Todo: make self.evals into a dict for neater code
                 self.ents = []
-                self.neuts = []
                 self.conts = []
+                self.neuts = []
+                self.evals =[self.ents, self.conts, self.neuts]
 
                 self.turns += 1
 
@@ -166,7 +168,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                     for j in range(2):
                         self.sets[i][j].observe({'id':'Other writer\'s claims', 'text':'\nDef. Correct: ' + showme[j]['text'] + '\nDef. incorrect: ' + showme[j]['task_data'] + '\nNeither: ' + showme[j]['task_data2']}) #1,3
                 # Pause to read claims
-                time.sleep(5)
+                time.sleep(10)
 
                 # Sort out hypotheses according to label and writer
                 self.entailments, self.contradictions, self.neutrals  = {}, {}, {}
@@ -177,26 +179,27 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                             'question': 'This is filler',
                             'choices': [i for i in range(0, 10)]
                         }]}}
-                    self.contradictions[i] = {'id':'Claim 1','text': self.hypotheses_collect[i]['task_data']}
-                    self.neutrals[i] = {'id':'Claim 1','text': self.hypotheses_collect[i]['task_data2']}
+                    self.contradictions[i] = {'id':'Claim '+str((i%2)+1),'text': self.hypotheses_collect[i]['task_data']}
+                    self.neutrals[i] = {'id':'Claim '+str((i%2)+1),'text': self.hypotheses_collect[i]['task_data2']}
 
                 # Show agents the prompt from the other set
                 # And the claims for that prompt
                 for agent in self.agents:
                     agent.observe({'id':'Phase 2', 
                                    'text':'Thank you for writing your claims. Now please read a new prompt and rank claims written by other people,'})
+                label = 'Definitely correct'
                 # Round robin exchange of prompts and claims for ranking
                 setnum = itertools.cycle(range(len(self.sets)))
                 next(setnum)
                 for i in range(len(self.sets)):
                     num = next(setnum)
-                    for agent in self.sets[i]:
-                        agent.observe(self.prompts[num])
-                        agent.observe({'id':'Label', 'text':'Definitely correct'})
-                        # agent.observe(self.entailments[num*2]) #0-> 2,3' 1->0,1
-                        # agent.observe(self.entailments[(num*2)+1])
-                    # TODO
-                    self.map_entail[i] = self.observe_hypotheses(self.sets[i], self.entailments[num*2], self.entailments[(num*2)+1])
+                    prompt = self.prompts[num]
+                    # for agent in self.sets[i]:
+                    #     prompt = self.prompts[num]
+                    #     agent.observe(prompt)
+                    #     label = 'Definitely correct'
+                    #     agent.observe({'id':'Label', 'text':'Definitely correct'})
+                    self.map_entail[i] = self.observe_hypotheses(prompt, label, self.sets[i], self.entailments[num*2], self.entailments[(num*2)+1])
                             
                 self.turns += 1
 
@@ -205,23 +208,33 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                 for agent in self.evaluators_copy:
                     evaluation = agent.act(blocking=False)
                     if evaluation is not None:
-                        self.ents.append(evaluation)
+                        self.evals[self.turns-3].append(evaluation)
                         self.evaluators_copy.remove(agent)
 
                         if len(self.evaluators_copy) == 0:
                             # Show contradictions
-                            for agent in self.agents:
-                                agent.observe({'id':'Label', 'text':'Definitely incorrect'})
-                            setnum = itertools.cycle(range(len(self.sets)))
-                            next(setnum)
-                            for i in range(len(self.sets)):
-                                num = next(setnum)
-                                self.map_contradict[i] = self.observe_hypotheses(self.sets[i], self.contradictions[num*2], self.contradictions[(num*2)+1])
+                            if self.turns == 3:
+                                label = 'Definitely incorrect'
+                            elif label == 4:
+                                label = 'Neither definitely correct nor definitely incorrect'
+                            else:
+                                pass
+                            # for agent in self.agents:
+                            #     agent.observe({'id':'Label', 'text':'Definitely incorrect'})
                             if self.turns < 5:
+                                setnum = itertools.cycle(range(len(self.sets)))
+                                next(setnum)
+                                for i in range(len(self.sets)):
+                                    num = next(setnum)
+                                    prompt = self.prompts[num]
+                                    # for agent in self.sets[i]:
+                                    #     agent.observe(self.prompts[num])
+                                    self.map_contradict[i] = self.observe_hypotheses(prompt, label, self.sets[i], self.contradictions[num*2], self.contradictions[(num*2)+1])
+                                # Make another copy of evaluators
                                 self.evaluators_copy = self.agents.copy()
-                            import pdb; pdb.set_trace()
                             self.turns +=1
 
+            """
             if self.turns == 3:
                 # Rankers rank all 3 sets of hypotheses
                 semi_turn = 0
@@ -286,8 +299,9 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                             self.neuts.append(evaluation1_n)
                             self.evaluators_copy_n = []
                             self.turns += 1
+            """
 
-            if self.turns == 4:
+            if self.turns == 6:
                 # Give feedback to rankers and writers
                 # Currently not checking for validaton agreement
 
@@ -295,6 +309,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                 maps = [self.map_entail, self.map_contradict, self.map_neutral]
                 eval0_justifications = []
                 eval1_justifications = []
+                import pdb; pdb.set_trace()
                 for i, rankings in enumerate([self.ents, self.conts, self.neuts]):
                     label = label_types[i]
                     writer_bonus_message = {'id': 'Bonus for ' + label, 'text': 'You ranked 1st! Bonus = $' + str(self.writer_bonus) +'.'}
@@ -392,26 +407,68 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
         else:
             self.episodeDone = True
 
-    def observe_hypotheses(self, agents, writer0_hyp, writer1_hyp):
-        # Flip a coin and switch order of claims if flip=1
+    def observe_hypotheses(self, prompt, label, agents, hyp0, hyp1):
+        """
+        Flip a coin and switch order of claims if flip=1
+        Agents observe relevant prompt, label, and hypotheses
+        Returns the mapping of flip
+        
+        To-do: cleanup code
+        """
         flip = random.randint(0,1)
         if flip == 0:
             mappy = self.noflip
             for agent in agents:
-                agent.observe(writer0_hyp)
-                agent.observe(writer1_hyp)
+                # agent.observe(hyp0)
+                # agent.observe(hyp1)
+                if hyp0['task_data']:
+                    agent.observe({'id':'Prompt', 'text': prompt['text'] + 
+                                                '\nLabel: '+ label +
+                                                '\n'+hyp0['id']+': '+hyp0['text'] + 
+                                                '\n'+hyp1['id']+': '+hyp1['text'],
+                                                'task_data': hyp0['task_data']})
+                else:
+                    agent.observe({'id':'Prompt', 'text':prompt['text'] + 
+                                                '\nLabel: '+ label +
+                                                '\n'+hyp0['id']+': '+hyp0['text'] + 
+                                                '\n'+hyp1['id']+': '+hyp1['text']})
         else:
             mappy = self.yesflip
-            flip0 = copy.deepcopy(writer0_hyp)
-            flip1 = copy.deepcopy(writer1_hyp)
+            flip0 = copy.deepcopy(hyp0)
+            flip1 = copy.deepcopy(hyp1)
             flip0['id'] = 'Claim 2'
             flip1['id'] = 'Claim 1'
 
-            agents[0].observe(writer0_hyp)
-            agents[0].observe(writer1_hyp)
-            agents[1].observe(flip1)
-            agents[1].observe(flip0)
+            if hyp0['task_data']:
+                agents[0].observe({'id':'Prompt', 'text': prompt['text'] + 
+                                            '\nLabel: '+ label +
+                                            '\n'+hyp0['id']+': '+hyp0['text'] + 
+                                            '\n'+hyp1['id']+': '+hyp1['text'],
+                                            'task_data': hyp0['task_data']})
+            else:
+                agents[0].observe({'id':'Prompt', 'text':prompt['text'] + 
+                                            '\nLabel: '+ label +
+                                            '\n'+hyp0['id']+': '+hyp0['text'] + 
+                                            '\n'+hyp1['id']+': '+hyp1['text']})
 
+            if flip0['task_data']:
+                agents[1].observe({'id':'Prompt', 'text': prompt['text'] + 
+                                            '\nLabel: '+ label +
+                                            '\n'+flip1['id']+': '+ flip1['text'] + 
+                                            '\n'+flip0['id']+': '+ flip0['text'],
+                                            'task_data': flip0['task_data']})
+            else:
+                agents[1].observe({'id':'Prompt', 'text': prompt['text'] + 
+                                            '\nLabel: '+ label +
+                                            '\n'+flip1['id']+': '+ flip1['text'] + 
+                                            '\n'+flip0['id']+': '+ flip0['text']})
+            # for agent in agents:
+            #     agent.observe(prompt)
+            #     agent.observe({'id':'Label', 'text':label})
+            # agents[0].observe(writer0_hyp)
+            # agents[0].observe(writer1_hyp)
+            # agents[1].observe(flip1)
+            # agents[1].observe(flip0)
         return mappy
 
     def get_intermediate_task_data(self):
