@@ -80,18 +80,11 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
         for agent in mturk_agents:
             num = int(agent.demo_role[-1]) # number form Person1 etc.
             self.agents[num-1] = agent
-                # if agent.demo_role == 'Person1':
-                #     # TODO: make number of writers a variable
-                #     self.agent_1 = agent
-                # elif agent.demo_role == 'Person2':
-                #     self.agent_2 = agent
-                # elif agent.demo_role == 'Person3':
-                #     self.agent_3 = agent
-                # else:
-                #     self.agent_4 = agent
-        self.sets = {} # [None for i in range(len(mturk_agents)/2)]
+        
+        self.sets = {}
         for i in range(int(self.num_agents/2)):
             self.sets[i] = self.agents[i*2 : (i+1)*2]
+        
         self.episodeDone = False
         self.max_meta_turns = 2
         self.meta_turn = 0
@@ -127,8 +120,6 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                 # concurrent work on HITs
                 self.writers_copy = self.agents.copy()
                 self.evaluators_copy = self.agents.copy()
-                # self.evaluators_copy_n = self.agents.copy()
-                # self.evaluators_copy_c = self.agents.copy()
                 
                 # Lists where we will store responses
                 self.hypotheses = []
@@ -166,7 +157,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                 for i in range(len(self.sets)):
                     showme = [self.hypotheses_collect[(i*2)+1], self.hypotheses_collect[(i*2)]] # 1,3 / 0,2
                     for j in range(2):
-                        self.sets[i][j].observe({'id':'Other writer\'s claims', 'text':'\nDef. Correct: ' + showme[j]['text'] + '\nDef. incorrect: ' + showme[j]['task_data'] + '\nNeither: ' + showme[j]['task_data2']}) #1,3
+                        self.sets[i][j].observe({'id':'Other writer\'s claims', 'text':'\n<u>Def. correct</u>: ' + showme[j]['text'] + '\n<u>Def. incorrect</u>: ' + showme[j]['task_data'] + '\n<u>Neither</u>: ' + showme[j]['task_data2']}) #1,3
                 # Pause to read claims
                 time.sleep(10)
 
@@ -186,7 +177,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                 # And the claims for that prompt
                 for agent in self.agents:
                     agent.observe({'id':'Phase 2', 
-                                   'text':'Thank you for writing your claims. Now please read a new prompt and rank claims written by other people,'})
+                                   'text':'<b>Thank you for writing your claims! Now please read the following prompt and rank the claims written by other people,</b>'})
                 label = 'Definitely correct'
                 # Round robin exchange of prompts and claims for ranking
                 setnum = itertools.cycle(range(len(self.sets)))
@@ -194,11 +185,6 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                 for i in range(len(self.sets)):
                     num = next(setnum)
                     prompt = self.prompts[num]
-                    # for agent in self.sets[i]:
-                    #     prompt = self.prompts[num]
-                    #     agent.observe(prompt)
-                    #     label = 'Definitely correct'
-                    #     agent.observe({'id':'Label', 'text':'Definitely correct'})
                     self.map_entail[i] = self.observe_hypotheses(prompt, label, self.sets[i], self.entailments[num*2], self.entailments[(num*2)+1])
                             
                 self.turns += 1
@@ -215,163 +201,126 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                             # Show contradictions
                             if self.turns == 3:
                                 label = 'Definitely incorrect'
-                            elif label == 4:
+                                show_hypotheses = self.contradictions
+                                mappy = self.map_contradict # shallow copy
+                            elif self.turns == 4:
                                 label = 'Neither definitely correct nor definitely incorrect'
+                                show_hypotheses = self.neutrals
+                                mappy = self.map_neutral # shallow copy
                             else:
                                 pass
-                            # for agent in self.agents:
-                            #     agent.observe({'id':'Label', 'text':'Definitely incorrect'})
+
                             if self.turns < 5:
                                 setnum = itertools.cycle(range(len(self.sets)))
                                 next(setnum)
                                 for i in range(len(self.sets)):
                                     num = next(setnum)
                                     prompt = self.prompts[num]
-                                    # for agent in self.sets[i]:
-                                    #     agent.observe(self.prompts[num])
-                                    self.map_contradict[i] = self.observe_hypotheses(prompt, label, self.sets[i], self.contradictions[num*2], self.contradictions[(num*2)+1])
+                                    mappy[i] = self.observe_hypotheses(prompt, label, self.sets[i], show_hypotheses[num*2], show_hypotheses[(num*2)+1])
                                 # Make another copy of evaluators
                                 self.evaluators_copy = self.agents.copy()
                             self.turns +=1
 
-            """
-            if self.turns == 3:
-                # Rankers rank all 3 sets of hypotheses
-                semi_turn = 0
-                if semi_turn == 0:
-                    for evaluator in self.evaluators_copy:
-                        evaluation_e = evaluator.act(blocking=False)
-                        if evaluation_e is not None:
-                            self.ents.append(evaluation_e)
-                            self.evaluators_copy.remove(evaluator)
-
-                            if len(self.evaluators_copy) == 0:
-                                for agent in self.set1:
-                                    agent.observe(self.prompt)
-                                    agent.observe({'id':'Label', 'text':'Definitely incorrect'})
-                                self.map_contradict = self.observe_hypotheses(self.writer0_contradict, self.writer1_contradict)
-                                semi_turn += 1
-                
-                if semi_turn == 1:
-                    # The (nested) while loops below are a hack
-                    # The system stops querying the HIT for messages without these loops
-                    # To-do: investigate root cause and fix
-
-                    evaluation0_c, evaluation1_c = None, None
-                    # Continuously query both rankers
-                    while evaluation0_c is None and evaluation1_c is None:
-                        evaluation0_c = self.evaluators_copy_c[0].act(blocking=False)
-                        evaluation1_c = self.evaluators_copy_c[1].act(blocking=False)
-                    # Query remaining ranker
-                    if evaluation0_c or evaluation1_c is not None:
-                        while evaluation0_c is None:
-                            evaluation0_c = self.evaluators_copy_c[0].act(blocking=False)
-                        while evaluation1_c is None:
-                            evaluation1_c = self.evaluators_copy_c[1].act(blocking=False)
-                        if evaluation0_c is not None and evaluation1_c is not None:
-                            self.conts.append(evaluation0_c)
-                            self.conts.append(evaluation1_c)
-                            self.evaluators_copy_c = []
-                            for evaluator in self.evaluators:
-                                evaluator.observe(self.prompt)
-                                evaluator.observe({'id':'Label', 'text':'Neither definitely correct nor definitely incorrect'})
-                            self.map_neutral = self.observe_hypotheses(self.writer0_neutral, self.writer1_neutral)
-                            semi_turn += 1
-                
-                if semi_turn == 2:
-                    # The (nested) while loops below are a hack
-                    # The system stops querying the HIT for messages without these loops
-                    # To-do: investigate root cause and fix
-
-                    evaluation0_n, evaluation1_n = None, None
-                    # Continuously query both rankers
-                    while evaluation0_n is None and evaluation1_n is None:
-                        evaluation0_n = self.evaluators_copy_n[0].act(blocking=False)
-                        evaluation1_n = self.evaluators_copy_n[1].act(blocking=False)
-                    # Query remaining ranker
-                    if evaluation0_n or evaluation1_n is not None:
-                        while evaluation0_n is None:
-                            evaluation0_n = self.evaluators_copy_n[0].act(blocking=False)
-                        while evaluation1_n is None:
-                            evaluation1_n = self.evaluators_copy_n[1].act(blocking=False)
-                        if evaluation0_n is not None and evaluation1_n is not None:
-                            self.neuts.append(evaluation0_n)
-                            self.neuts.append(evaluation1_n)
-                            self.evaluators_copy_n = []
-                            self.turns += 1
-            """
-
             if self.turns == 6:
                 # Give feedback to rankers and writers
                 # Currently not checking for validaton agreement
+                # To-do: cleanup code in this section. it's a hot mess.
 
+                persons = [agent.demo_role for agent in self.agents]
                 label_types = ['Definitely Correct', 'Definitely Incorrect', 'Neither']
                 maps = [self.map_entail, self.map_contradict, self.map_neutral]
-                eval0_justifications = []
-                eval1_justifications = []
-                import pdb; pdb.set_trace()
-                for i, rankings in enumerate([self.ents, self.conts, self.neuts]):
-                    label = label_types[i]
-                    writer_bonus_message = {'id': 'Bonus for ' + label, 'text': 'You ranked 1st! Bonus = $' + str(self.writer_bonus) +'.'}
-                    writer_nobonus_message = {'id':'Bonus', 'text':'Unfortunately you ranked 2nd on all 3 claims.'}
-                    agrm_bonus_message = {'id': 'Bonus for ' + label, 'text': 'You agreed with the other evaluators! Bonus = $' + str(self.ranker_bonus) + '.'}
-                    noagrm_bonus_message = {'id': 'Bonus for ' + label, 'text': 'The evaluators did not agree. Bonus = $' + str(self.writer_bonus/2) + '.'}
+                all_evals = [self.ents, self.conts, self.neuts]
+                set_evals = {}
+                for i in self.sets.keys():
+                    set_evals[i] = []
+                    for evals in all_evals:
+                        # 0-> 0,1 ; 1 -> 2,3
+                        set_eval_ = [next(item for item in evals if item['id'] == persons[i*2]), next(item for item in evals if item['id'] == persons[(i*2)+1])]
+                        set_evals[i].append(set_eval_)
 
-                    # Map the selected choices to "unflip" the ordering
-                    # and collect ranker justifications
-                    if rankings[1]['id'] == "Evaluator1":
-                        rankings[1]['text'] = maps[i][rankings[1]['text']]
-                        # justifications
-                        if rankings[0]['task_data'] is not '':
-                            eval0_justifications.append(label + ': ' + rankings[0]['task_data'])
-                        if rankings[1]['task_data'] is not '':
-                            eval1_justifications.append(label + ': ' + rankings[1]['task_data'])
-                    else:
-                        rankings[0]['text'] = maps[i][rankings[0]['text']]
-                        # justifications
-                        if rankings[0]['task_data'] is not '':
-                            eval1_justifications.append(label + ': ' + rankings[0]['task_data'])
-                        if rankings[1]['task_data'] is not '':
-                            eval0_justifications.append(label + ': ' + rankings[1]['task_data'])
-
-                    # Show messages about bonuses
+                writer_feedback = []
+                setnum = itertools.cycle(range(len(self.sets)))
+                next(setnum)
+                for j in self.sets.keys():
+                    eval0_justifications = []
+                    eval1_justifications = []
                     w0_rank = 0
                     w1_rank = 0
-                    if rankings[0]['text'] == rankings[1]['text']:
-                        for evaluator in self.evaluators:
-                            evaluator.observe(agrm_bonus_message)
-                        if rankings[0]['text'] == 'Claim 1':
-                            self.writer_0.observe(writer_bonus_message)
-                            w0_rank += 1
+                    evaluators = self.sets[j]
+                    num = next(setnum)
+                    writers = self.sets[num]
+                    for i, rankings in enumerate(set_evals[j]):
+                        label = label_types[i]
+                        writer_bonus_message = {'id': 'Bonus for ' + label, 'text': 'You ranked 1st! Bonus = $' + str(self.writer_bonus) +'.'}
+                        writer_nobonus_message = {'id':'Bonus', 'text':'Unfortunately you ranked 2nd on all 3 claims.'}
+                        agrm_bonus_message = {'id': 'Bonus for ' + label, 'text': 'You agreed with the other evaluators! Bonus = $' + str(self.ranker_bonus) + '.'}
+                        noagrm_bonus_message = {'id': 'Bonus for ' + label, 'text': 'The evaluators did not agree. Bonus = $' + str(self.writer_bonus/2) + '.'}
+                        # Map the selected choices to "unflip" the ordering
+                        # and collect ranker justifications
+                        if rankings[1]['id'] == persons[(j*2)+1]: # Even numbered Persons 
+                            rankings[1]['text'] = maps[i][j][rankings[1]['text']]
+                            if rankings[0]['task_data'] is not '':
+                                eval0_justifications.append(label + ': ' + rankings[0]['task_data'])
+                            if rankings[1]['task_data'] is not '':
+                                eval1_justifications.append(label + ': ' + rankings[1]['task_data'])
                         else:
-                            self.writer_1.observe(writer_bonus_message)
-                            w1_rank += 1
-                    else:
-                        # Rankers did not agree
-                        for writer in self.writers:
-                            writer.observe(noagrm_bonus_message)
-                            w0_rank += 1
-                            w1_rank +=1
-                        pass
+                            rankings[0]['text'] = maps[i][j][rankings[0]['text']]
+                            if rankings[0]['task_data'] is not '':
+                                eval1_justifications.append(label + ': ' + rankings[0]['task_data'])
+                            if rankings[1]['task_data'] is not '':
+                                eval0_justifications.append(label + ': ' + rankings[1]['task_data'])
+
+                        # Show messages about bonuses
+                        if rankings[0]['text'] == rankings[1]['text']:
+                            for evaluator in evaluators:
+                                evaluator.observe(agrm_bonus_message)
+                            if rankings[0]['text'] == 'Claim 1':
+                                writer_feedback.append((writers[0], writer_bonus_message))
+                                # writers[0].observe(writer_bonus_message)
+                                w0_rank += 1
+                            else:
+                                writer_feedback.append((writers[1], writer_bonus_message))
+                                # writers[1].observe(writer_bonus_message)
+                                w1_rank += 1
+                        else:
+                            # Rankers did not agree
+                            for writer in writers:
+                                writer_feedback.append((writer, noagrm_bonus_message))
+                                # writer.observe(noagrm_bonus_message)
+                                w0_rank += 1
+                                w1_rank +=1
+                        
+                    # If a writer got not bonuses, just inform them of that
                     if w0_rank == 0:
-                        self.writer_0.observe(writer_nobonus_message)
+                        writer_feedback((writers[0], writer_nobonus_message))
+                        # writers[0].observe(writer_nobonus_message)
                     elif w1_rank == 0:
-                        self.writer_1.observe(writer_nobonus_message)
+                        writer_feedback((writers[1], writer_nobonus_message))
+                        # writers[1].observe(writer_nobonus_message)
+                    else:
+                        pass
 
+                    # Show rankers partner's justifications
+                    # and show writer's both sets of justifications 
+                    if len(eval1_justifications) != 0:
+                        evaluators[1].observe({'id':'Justifications from other evaluator', 'text': "\n"+"\n".join(eval0_justifications)})
+                        for writer in writers:
+                            # writer.observe({'id':'Evaluator 1\'s explanations', 'text': "\n"+"\n".join(eval0_justifications)})
+                            writer_feedback((writer, {'id':'Evaluator 1\'s explanations', 'text': "\n"+"\n".join(eval0_justifications)}))
+                    if len(eval0_justifications) != 0:
+                        evaluators[0].observe({'id':'Justifications from other evaluator', 'text': "\n"+"\n".join(eval1_justifications)})
+                        for writer in writers:
+                            writer_feedback((writer, {'id':'Evaluator 2\'s explanations', 'text': "\n"+"\n".join(eval1_justifications)}))
+                            # writer.observe({'id':'Evaluator 2\'s explanations', 'text': "\n"+"\n".join(eval1_justifications)})
 
-                self.interim_data.append(self.get_intermediate_task_data())
+                # Ranking bonuses and feedback is sent
+                # Now send writing bonuses and feedback
+                for i in range(len(writer_feedback)):
+                    agent = writer_feedback[i][0]
+                    feedback = writer_feedback[i][1]
+                    agent.observe(feedback)
 
-                # Show rankers partner's justifications
-                # and show writer's both sets of justifications 
-                if len(eval1_justifications) != 0:
-                    self.evaluator_1.observe({'id':'Justifications from other evaluator', 'text': "\n"+"\n".join(eval0_justifications)})
-                    for writer in self.writers:
-                        writer.observe({'id':'Evaluator 1\'s explanations', 'text': "\n"+"\n".join(eval0_justifications)})
-                if len(eval0_justifications) != 0:
-                    self.evaluator_0.observe({'id':'Justifications from other evaluator', 'text': "\n"+"\n".join(eval1_justifications)})
-                    for writer in self.writers:
-                        writer.observe({'id':'Evaluator 2\'s explanations', 'text': "\n"+"\n".join(eval1_justifications)})
-
+                self.interim_data.append(self.get_intermediate_task_data()) #To fix
 
                 # Pause before showing next prompt
                 if (len(eval0_justifications) + len(eval1_justifications)) != 0:
@@ -412,69 +361,38 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
         Flip a coin and switch order of claims if flip=1
         Agents observe relevant prompt, label, and hypotheses
         Returns the mapping of flip
-        
-        To-do: cleanup code
         """
+        def make_observation(agent, hyp_0, hyp_1):
+            if 'task_data' in hyp_0:
+                agent.observe({'id':'Prompt', 'text': prompt['text'] + 
+                                            '\n<b>Label</b>: '+ label +
+                                            '\n\n<b>'+hyp_0['id']+'</b>: '+hyp_0['text'] + 
+                                            '\n<b>'+hyp_1['id']+'</b>: '+hyp_1['text'],
+                                            'task_data': hyp_0['task_data']})
+            else:
+                agent.observe({'id':'Prompt', 'text':prompt['text'] + 
+                                            '\n<b>Label</b>: '+ label +
+                                            '\n\n<b>'+hyp_0['id']+'</b>: '+hyp_0['text'] + 
+                                            '\n<b>'+hyp_1['id']+'</b>: '+hyp_1['text']})
+
         flip = random.randint(0,1)
         if flip == 0:
             mappy = self.noflip
             for agent in agents:
-                # agent.observe(hyp0)
-                # agent.observe(hyp1)
-                if hyp0['task_data']:
-                    agent.observe({'id':'Prompt', 'text': prompt['text'] + 
-                                                '\nLabel: '+ label +
-                                                '\n'+hyp0['id']+': '+hyp0['text'] + 
-                                                '\n'+hyp1['id']+': '+hyp1['text'],
-                                                'task_data': hyp0['task_data']})
-                else:
-                    agent.observe({'id':'Prompt', 'text':prompt['text'] + 
-                                                '\nLabel: '+ label +
-                                                '\n'+hyp0['id']+': '+hyp0['text'] + 
-                                                '\n'+hyp1['id']+': '+hyp1['text']})
+                make_observation(agent, hyp0, hyp1)
         else:
             mappy = self.yesflip
             flip0 = copy.deepcopy(hyp0)
             flip1 = copy.deepcopy(hyp1)
             flip0['id'] = 'Claim 2'
             flip1['id'] = 'Claim 1'
+            make_observation(agents[0], hyp0, hyp1)
+            make_observation(agents[1], flip1, flip0)
 
-            if hyp0['task_data']:
-                agents[0].observe({'id':'Prompt', 'text': prompt['text'] + 
-                                            '\nLabel: '+ label +
-                                            '\n'+hyp0['id']+': '+hyp0['text'] + 
-                                            '\n'+hyp1['id']+': '+hyp1['text'],
-                                            'task_data': hyp0['task_data']})
-            else:
-                agents[0].observe({'id':'Prompt', 'text':prompt['text'] + 
-                                            '\nLabel: '+ label +
-                                            '\n'+hyp0['id']+': '+hyp0['text'] + 
-                                            '\n'+hyp1['id']+': '+hyp1['text']})
-
-            if flip0['task_data']:
-                agents[1].observe({'id':'Prompt', 'text': prompt['text'] + 
-                                            '\nLabel: '+ label +
-                                            '\n'+flip1['id']+': '+ flip1['text'] + 
-                                            '\n'+flip0['id']+': '+ flip0['text'],
-                                            'task_data': flip0['task_data']})
-            else:
-                agents[1].observe({'id':'Prompt', 'text': prompt['text'] + 
-                                            '\nLabel: '+ label +
-                                            '\n'+flip1['id']+': '+ flip1['text'] + 
-                                            '\n'+flip0['id']+': '+ flip0['text']})
-            # for agent in agents:
-            #     agent.observe(prompt)
-            #     agent.observe({'id':'Label', 'text':label})
-            # agents[0].observe(writer0_hyp)
-            # agents[0].observe(writer1_hyp)
-            # agents[1].observe(flip1)
-            # agents[1].observe(flip0)
         return mappy
 
     def get_intermediate_task_data(self):
-        # brings important data together for the task, to later be used for
-        # creating the dataset. If data requires pickling, put it in a field
-        # called 'needs-pickle'.
+        # brings important data together before the next meta-turn
         return {
             'sub-hit': self.meta_turn,
             'premise': self.prompt['text'],
