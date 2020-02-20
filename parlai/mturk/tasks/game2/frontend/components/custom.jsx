@@ -20,8 +20,7 @@ import Slider from 'rc-slider';
 import { getCorrectComponent } from "./core_components.jsx";
 import $ from 'jquery';
 
-
-class EvaluatorIdleResponse extends React.Component {
+class IdleResponse extends React.Component {
   render() {
     // TODO maybe move to CSS?
     let pane_style = {
@@ -39,32 +38,7 @@ class EvaluatorIdleResponse extends React.Component {
         style={pane_style}
       >
         <span>
-          The writers are composing their claims right now.
-        </span>
-      </div>
-    );
-  }
-}
-
-class WriterIdleResponse extends React.Component {
-  render() {
-    // TODO maybe move to CSS?
-    let pane_style = {
-      paddingLeft: '25px',
-      paddingTop: '20px',
-      paddingBottom: '20px',
-      paddingRight: '25px',
-      float: 'left',
-    };
-
-    return (
-      <div
-        id="response-type-idle"
-        className="response-type-module"
-        style={pane_style}
-      >
-        <span>
-          The evaluators are ranking your claims right now.
+          Other people on the HIT are still working...
         </span>
       </div>
     );
@@ -89,32 +63,6 @@ class Hourglass extends React.Component {
     );
   }
 }
-
-// class EvaluatorWaitingMessage extends React.Component {
-//   render() {
-//     let message_style = {
-//       float: 'left',
-//       display: 'table',
-//       backgroundColor: '#fff',
-//     };
-//     let text = 'Waiting for the writers to compose their claims...';
-//     if (this.props.world_state == 'waiting') {
-//       text = 'Waiting to pair with a task...';
-//     }
-//     return (
-//       <div
-//         id="waiting-for-message"
-//         className="row"
-//         style={{ marginLeft: '0', marginRight: '0' }}
-//       >
-//         <div className="alert alert-warning" role="alert" style={message_style}>
-//           <Hourglass />
-//           <span style={{ fontSize: '16px' }}>{text}</span>
-//         </div>
-//       </div>
-//     );
-//   }
-// }
 
 class WaitingMessage extends React.Component {
   render() {
@@ -154,16 +102,6 @@ class WriterResponse extends React.Component {
     this.handleInputChange = this.handleInputChange.bind(this);
     // this.handleEnterKey = this.handleEnterKey.bind(this);
   }
-
-  // constructor(props) {
-  //   super(props);
-  //   this.state = { 
-  //     textval: '',
-  //     entailText: '',
-  //     contradictText: '',
-  //     neutralText: '',
-  //     sending: false };
-  // }
 
   componentDidUpdate(prevProps, prevState, snapshot) {
     // Only change in the active status of this component should cause a
@@ -500,8 +438,6 @@ class EvaluatorResponse extends React.Component {
     const invalid = "Invalid"
     const text_claim1 = "Claim 1"
     const text_claim2 = "Claim 2"
-    // checked={this.state.validation1 == approve}
-    // checked={this.state.validation1 == invalid}
     let validation_buttons_1 = (
       <div>
         <Form
@@ -542,8 +478,6 @@ class EvaluatorResponse extends React.Component {
       </div>
     );
 
-    // checked={this.state.validation2 == approve}
-    // checked={this.state.validation2 == invalid}
     let validation_buttons_2 = (
       <div>
         <Form
@@ -586,11 +520,7 @@ class EvaluatorResponse extends React.Component {
       </div>
     );
 
-    // const s1_name = "Claim 1";
-    // const s2_name = "Claim 2"
     const text_rank1 = "Which claim do you think is better?" ;
-    // checked={this.state.claimChoice == text_claim1}
-    // checked={this.state.claimChoice == text_claim2}
     let rank1 = (
       <div>
         <Form
@@ -727,7 +657,7 @@ class ResponsePane extends React.Component {
         break;
       case 'idle':
       default:
-        response_pane = <WriterIdleResponse {...this.props} />;
+        response_pane = <IdleResponse {...this.props} />;
         break;
     }
 
@@ -741,53 +671,6 @@ class ResponsePane extends React.Component {
     );
   }
 }
-
-// class ResponsePaneyEvaluator extends React.Component {
-//   render() {
-//     let v_id = this.props.v_id;
-//     let XDoneResponse = getCorrectComponent("XDoneResponse", v_id);
-//     let XFormResponse = getCorrectComponent('XFormResponse', v_id);
-
-//     let response_pane = null;
-//     switch (this.props.chat_state) {
-//       case 'done':
-//       case 'inactive':
-//         response_pane = <XDoneResponse {...this.props} />;
-//         break;
-//       case 'text_input':
-//       case 'waiting':
-//         if (this.props.task_data && this.props.task_data['respond_with_form']) {
-//           response_pane = (
-//             <EvaluatorResponse
-//               {...this.props}
-//               active={this.props.chat_state == 'text_input'}
-//             />
-//           );
-//         } else {
-//           response_pane = (
-//             <EvaluatorResponse
-//               {...this.props}
-//               active={this.props.chat_state == 'text_input'}
-//             />
-//           );
-//         }
-//         break;
-//       case 'idle':
-//       default:
-//         response_pane = <EvaluatorIdleResponse {...this.props} />;
-//         break;
-//     }
-
-//     return (
-//       <div
-//         id="right-bottom-pane"
-//         style={{ width: "100%", backgroundColor: "#eee" }}
-//       >
-//         {response_pane}
-//       </div>
-//     );
-//   }
-// }
 
 class MessageList extends React.Component {
   makeMessages() {
@@ -825,42 +708,6 @@ class MessageList extends React.Component {
     );
   }
 }
-
-// class EvaluatorMessageList extends React.Component {
-//   makeMessages() {
-//     let agent_id = this.props.agent_id;
-//     let messages = this.props.messages;
-//     // Handles rendering messages from both the user and anyone else
-//     // on the thread - agent_ids for the sender of a message exist in
-//     // the m.id field.
-//     let XChatMessage = getCorrectComponent('XChatMessage', this.props.v_id);
-//     let onClickMessage = this.props.onClickMessage;
-//     if (typeof onClickMessage !== 'function') {
-//       onClickMessage = idx => {};
-//     }
-//     return messages.map((m, idx) => (
-//       <div key={m.message_id} onClick={() => onClickMessage(idx)}>
-//         <XChatMessage
-//           is_self={m.id == agent_id}
-//           agent_id={m.id}
-//           message={m.text}
-//           task_data={m.task_data}
-//           task_data2={}
-//           message_id={m.message_id}
-//           duration={this.props.is_review ? m.duration : undefined}
-//         />
-//       </div>
-//     ));
-//   }
-
-//   render() {
-//     return (
-//       <div id="message_thread" style={{ width: '100%' }}>
-//         {this.makeMessages()}
-//       </div>
-//     );
-//   }
-// }
 
 // class WriterChatMessage extends React.Component {
 //   render() {
@@ -970,57 +817,10 @@ class CoreChatMessage extends React.Component {
   }
 }
 
-
-var IdleResponseHolder = {
-  // default: leave blank to use original default when no ids match
-  Evaluator: EvaluatorIdleResponse,
-  Writer: WriterIdleResponse,
-};
-
-var TextResponseHolder = {
-  // default: leave blank to use original default when no ids match
-  Evaluator: EvaluatorResponse,
-  'Onboarding Evaluator': EvaluatorResponse,
-  Writer: WriterResponse,
-  'Onboarding Writer': WriterResponse,
-};
-
-// var ResponsePaneHolder = {
-//   // default: leave blank to use original default when no ids match
-//   Writer0: ResponsePaneWriter,
-//   Writer1: ResponsePaneWriter,
-//   Evaluator0: ResponsePaneyEvaluator,
-//   Evaluator1: ResponsePaneyEvaluator,
-// };
-
-// var WaitingResponseHolder = {
-//   Writer0: WriterWaitingMessage,
-//   Writer1: WriterWaitingMessage,
-//   Evaluator0: EvaluatorWaitingMessage,
-//   Evaluator1: EvaluatorWaitingMessage,
-// }
-
-// var MessageListHolder = {
-//   Writer0: NewMessageList,
-//   Writer1: NewMessageList,
-//   Evaluator0: NewMessageList,
-//   Evaluator1: NewMessageList,
-// }
-
-// var ChatMessageHolder = {
-//   Writer0: WriterChatMessage,
-//   Writer1: WriterChatMessage,
-//   Evaluator0: CoreChatMessage,
-//   Evaluator1: CoreChatMessage,
-// }
-
 export default {
   // ComponentName: CustomReplacementComponentMap
-  // XWaitingMessage: WaitingResponseHolder,
   XWaitingMessage: { default: WaitingMessage },
-  // XResponsePane:  ResponsePaneHolder,
   XResponsePane: { default: ResponsePane },
   XMessageList: { default: MessageList },
-  // XChatMessage: ChatMessageHolder,
   XChatMessage: { default: CoreChatMessage },
 };

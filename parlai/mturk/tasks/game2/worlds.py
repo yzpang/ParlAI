@@ -9,6 +9,7 @@ import random
 import copy
 import time
 import itertools
+import pandas as pd
 
 class OnboardingWorld(MTurkOnboardWorld):
     """Example onboarding world. Sends a message from the world to the
@@ -86,12 +87,11 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
             self.sets[i] = self.agents[i*2 : (i+1)*2]
         
         self.episodeDone = False
-        self.max_meta_turns = 2
+        self.max_meta_turns = 1
         self.meta_turn = 0
         self.interim_data = []
         self.turns = 0
         
-        self.prompt = None # To-do import data
         self.noflip = {'Claim 1':'Claim 1', 'Claim 2':'Claim 2'}
         self.yesflip = {'Claim 1':'Claim 2', 'Claim 2':'Claim 1'}
         self.writer_bonus = 0.3
@@ -144,7 +144,6 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
 
             if self.turns == 2:
                 # Collect all the hypothesis and pass the first set to the rankers
-
                 # Sort out hypotheses: assign hypothesis to correct worker
                 self.hypotheses_collect = {}
                 for i in range(len(self.hypotheses)):
@@ -224,21 +223,22 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
             if self.turns == 6:
                 # Give feedback to rankers and writers
                 # Currently not checking for validaton agreement
-                # To-do: cleanup code in this section. it's a hot mess.
+                # To-do: cleanup code in this section. it's a hot mess and breaks with > 4 agents
 
                 persons = [agent.demo_role for agent in self.agents]
                 label_types = ['Definitely Correct', 'Definitely Incorrect', 'Neither']
-                maps = [self.map_entail, self.map_contradict, self.map_neutral]
+                self.maps = [self.map_entail, self.map_contradict, self.map_neutral]
                 all_evals = [self.ents, self.conts, self.neuts]
                 set_evals = {}
                 for i in self.sets.keys():
                     set_evals[i] = []
-                    for evals in all_evals:
+                    for evals in self.evals:
                         # 0-> 0,1 ; 1 -> 2,3
                         set_eval_ = [next(item for item in evals if item['id'] == persons[i*2]), next(item for item in evals if item['id'] == persons[(i*2)+1])]
                         set_evals[i].append(set_eval_)
 
                 writer_feedback = []
+                evaluator_feedback = []
                 setnum = itertools.cycle(range(len(self.sets)))
                 next(setnum)
                 for j in self.sets.keys():
@@ -246,25 +246,28 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                     eval1_justifications = []
                     w0_rank = 0
                     w1_rank = 0
+                    agrm_rate = 0
                     evaluators = self.sets[j]
                     num = next(setnum)
                     writers = self.sets[num]
                     for i, rankings in enumerate(set_evals[j]):
                         label = label_types[i]
-                        writer_bonus_message = {'id': 'Bonus for ' + label, 'text': 'You ranked 1st! Bonus = $' + str(self.writer_bonus) +'.'}
-                        writer_nobonus_message = {'id':'Bonus', 'text':'Unfortunately you ranked 2nd on all 3 claims.'}
-                        agrm_bonus_message = {'id': 'Bonus for ' + label, 'text': 'You agreed with the other evaluators! Bonus = $' + str(self.ranker_bonus) + '.'}
-                        noagrm_bonus_message = {'id': 'Bonus for ' + label, 'text': 'The evaluators did not agree. Bonus = $' + str(self.writer_bonus/2) + '.'}
+                        writer_bonus_message = {'id': label, 'text': 'You ranked 1st! Bonus = $' + str(self.writer_bonus) +'.'}
+                        writer_nobonus_message = {'id':'No bonus', 'text':'Unfortunately you ranked 2nd on all 3 claims.'}
+                        noagrm_bonus_message = {'id': label, 'text': 'The evaluators did not agree. Bonus = $' + str(self.writer_bonus/2) + '.'}
+                        agrm_bonus_message = {'id': label, 'text': 'You agreed with the other evaluator! Bonus = $' + str(self.ranker_bonus) + '.'}
+                        eval_nobonus_message = {'id': 'No bonus', 'text': 'Unfortunately you disagreed with the other evaluator on all 3 sets.'}
+
                         # Map the selected choices to "unflip" the ordering
                         # and collect ranker justifications
                         if rankings[1]['id'] == persons[(j*2)+1]: # Even numbered Persons 
-                            rankings[1]['text'] = maps[i][j][rankings[1]['text']]
+                            rankings[1]['text'] = self.maps[i][j][rankings[1]['text']]
                             if rankings[0]['task_data'] is not '':
                                 eval0_justifications.append(label + ': ' + rankings[0]['task_data'])
                             if rankings[1]['task_data'] is not '':
                                 eval1_justifications.append(label + ': ' + rankings[1]['task_data'])
                         else:
-                            rankings[0]['text'] = maps[i][j][rankings[0]['text']]
+                            rankings[0]['text'] = self.maps[i][j][rankings[0]['text']]
                             if rankings[0]['task_data'] is not '':
                                 eval1_justifications.append(label + ': ' + rankings[0]['task_data'])
                             if rankings[1]['task_data'] is not '':
@@ -272,86 +275,85 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
 
                         # Show messages about bonuses
                         if rankings[0]['text'] == rankings[1]['text']:
+                            agrm_rate += 1
                             for evaluator in evaluators:
-                                evaluator.observe(agrm_bonus_message)
+                                evaluator_feedback.append((evaluator, agrm_bonus_message))
                             if rankings[0]['text'] == 'Claim 1':
                                 writer_feedback.append((writers[0], writer_bonus_message))
-                                # writers[0].observe(writer_bonus_message)
                                 w0_rank += 1
                             else:
                                 writer_feedback.append((writers[1], writer_bonus_message))
-                                # writers[1].observe(writer_bonus_message)
                                 w1_rank += 1
                         else:
                             # Rankers did not agree
                             for writer in writers:
                                 writer_feedback.append((writer, noagrm_bonus_message))
-                                # writer.observe(noagrm_bonus_message)
                                 w0_rank += 1
                                 w1_rank +=1
                         
+                    # If rankers never agree, inform them of that
+                    if agrm_rate == 0:
+                        for evaluator in evaluators:
+                            evaluator_feedback.append((evaluator, eval_nobonus_message))
+
                     # If a writer got not bonuses, just inform them of that
                     if w0_rank == 0:
-                        writer_feedback((writers[0], writer_nobonus_message))
-                        # writers[0].observe(writer_nobonus_message)
+                        writer_feedback.append((writers[0], writer_nobonus_message))
                     elif w1_rank == 0:
-                        writer_feedback((writers[1], writer_nobonus_message))
-                        # writers[1].observe(writer_nobonus_message)
+                        writer_feedback.append((writers[1], writer_nobonus_message))
                     else:
                         pass
 
                     # Show rankers partner's justifications
                     # and show writer's both sets of justifications 
                     if len(eval1_justifications) != 0:
-                        evaluators[1].observe({'id':'Justifications from other evaluator', 'text': "\n"+"\n".join(eval0_justifications)})
+                        evaluator_feedback.append((evaluators[1], {'id':'Justifications from other evaluator', 'text': "\n"+"\n".join(eval0_justifications)}))
                         for writer in writers:
-                            # writer.observe({'id':'Evaluator 1\'s explanations', 'text': "\n"+"\n".join(eval0_justifications)})
-                            writer_feedback((writer, {'id':'Evaluator 1\'s explanations', 'text': "\n"+"\n".join(eval0_justifications)}))
+                            writer_feedback.append((writer, {'id':'Evaluator 1\'s justifications', 'text': "\n"+"\n".join(eval0_justifications)}))
                     if len(eval0_justifications) != 0:
-                        evaluators[0].observe({'id':'Justifications from other evaluator', 'text': "\n"+"\n".join(eval1_justifications)})
+                        evaluator_feedback.append((evaluators[0], {'id':'Justifications from other evaluator', 'text': "\n"+"\n".join(eval1_justifications)}))
                         for writer in writers:
-                            writer_feedback((writer, {'id':'Evaluator 2\'s explanations', 'text': "\n"+"\n".join(eval1_justifications)}))
-                            # writer.observe({'id':'Evaluator 2\'s explanations', 'text': "\n"+"\n".join(eval1_justifications)})
+                            writer_feedback.append((writer, {'id':'Evaluator 2\'s justifications', 'text': "\n"+"\n".join(eval1_justifications)}))
 
-                # Ranking bonuses and feedback is sent
-                # Now send writing bonuses and feedback
-                for i in range(len(writer_feedback)):
-                    agent = writer_feedback[i][0]
-                    feedback = writer_feedback[i][1]
-                    agent.observe(feedback)
+                    # Sort out evaluator feedback+bonues by agent and show the messsages
+                    evaluator_i_feedback = {}
+                    for i, evaluator in enumerate(evaluators):
+                        evaluator_i_feedback[i] = [evaluator_feedback[j][1] if evaluator_feedback[j][0] == evaluators[i] else None for j in range(len(evaluator_feedback))]
+                    self.give_feedback(evaluator_i_feedback, evaluators)
 
-                self.interim_data.append(self.get_intermediate_task_data()) #To fix
+                # Pause before showing feedback for writing
+                time.sleep(5)
 
-                # Pause before showing next prompt
-                if (len(eval0_justifications) + len(eval1_justifications)) != 0:
-                    time.sleep(4)
-                time.sleep(3)
+                # Show writing feedback and bonuse amounts
+                writer_i_feedback = {}
+                for i, writer in enumerate(self.agents):
+                    writer_i_feedback[i] = [writer_feedback[j][1] if writer_feedback[j][0] == writer else None for j in range(len(writer_feedback))]
+                self.give_feedback(writer_i_feedback, self.agents, writing=True)
+
+                # Organize data for ease
+                label_types = ['entailment', 'contradiction', 'neutral']
+                hypothesis_types = [self.entailments, self.contradictions, self.neutrals]
+                for i, evals in enumerate(self.evals):
+                    for j in range(len(evals)):
+                        evals[j]['label'] = label_types[i]
+                        for num in range(int(self.num_agents/2)):
+                            if evals[j]['id'] in  persons[num*2:(num*2)+2]: # 0:2, 2:4
+                                setnum = num
+                            else:
+                                pass
+                        evals[j]['prompt'] = self.prompts[setnum]['text']
+                        evals[j]['hypothesis-1'] = hypothesis_types[i][setnum*2]['text']
+                        evals[j]['hypothesis-2'] = hypothesis_types[i][(setnum*2)+1]['text']
+                        evals[j]['explanation'] = evals[j].pop('task_data')
+                        evals[j]['hyp1-validation'] = evals[j].pop('task_data2')
+                        evals[j]['hyp2-validation'] = evals[j].pop('task_data3')
+
+                data = pd.DataFrame(self.ents + self.conts + self.neuts)
+                self.interim_data.append(data.to_dict()) # dict so we don't require picklin
+                # self.interim_data.append(self.get_intermediate_task_data())
+
                 self.meta_turn += 1
                 self.turns = 0
-                # import pdb; pdb.set_trace()
-
-                # # Organize data for ease
-                # label_types = ['entailment', 'contradiction', 'neutral']
-                # for i in enumerate(2):
-                #     self.ents[i]['type'] = label_types[0]
-                #     self.conts[i]['type'] = label_types[1]
-                #     self.neuts[i]['type'] = label_types[2]
-                # tmp = pd.DataFrame(self.ents + self.conts + self.neuts)
-                # self.rankings = tmp.to_dict() # so we don't require pickling
-
-                # # Give feedback to writers
-                # for label in label_types:
-                #     rank_writer0, rank_writer1 = 0, 0
-                #     rank = tmp.loc[tmp['type'] == label]['text']
-                #     rank_writer0 += len(rank.loc[rank == 'Claim 1'])
-                #     rank_writer1 += len(rank.loc[rank == 'Claim 2'])
-                #     if rank_writer0 == 2:
-                #         self.writer_0.observe({'id':'Def. correct rank:', 'text': 'You got the higher rank! Your bonus is $'+str(0.5)+'.'})
-                #     elif rank_writer1 == 2:
-                #         self.writer_1.observe(sameeee)
-                #     else:
-                #         # both writers observe no clear ranking?
-                #         pass
 
         else:
             self.episodeDone = True
@@ -391,16 +393,35 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
 
         return mappy
 
+    def give_feedback(self, all_feedback, agents, writing=False):
+        # agent.observe({'id':'Feedback Phase', 'text':'<b>Thank you! Here are your bonuses for ranking based on agreement with the other evaluator,</b>'})
+        # writer.observe({'id':'Claim writing feedback', 'text':'<b> And these are your bonuses for the claims you wrote in Phase 1,</b>'})
+        for i in all_feedback.keys():
+            text = ''
+            for feedback in all_feedback[i]:
+                if feedback is None:
+                    pass
+                elif 'No bonus' in feedback['id']:
+                    text += '\n' + feedback['text']
+                elif 'justifications' in feedback['id'].lower():
+                        text += '\n\n<b>' + feedback['id'] + '</b>: ' + feedback['text']
+                else:
+                    text += '\n' + feedback['id'] + ': ' + feedback['text']
+            if not writing: # evaluation feedback
+                agents[i].observe({'id':'Thank you! Here are your bonuses for ranking based on agreement with the other evaluator', 'text':text})
+            else: # writing feedback
+                agents[i].observe({'id':'And these are your bonuses for the claims you wrote in Phase 1', 'text':text})
+
     def get_intermediate_task_data(self):
         # brings important data together before the next meta-turn
         return {
             'sub-hit': self.meta_turn,
-            'premise': self.prompt['text'],
-            'writer-0': self.hypotheses_0,
-            'writer-1': self.hypotheses_1,
+            'premises': self.prompts,
+            'hypotheses': self.hypotheses_collect,
             'rank-e': self.ents,
             'rank-c': self.conts,
             'rank-n': self.neuts,
+            'flip-maps': self.maps,
         }
 
     def episode_done(self):
