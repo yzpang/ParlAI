@@ -87,7 +87,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
             self.sets[i] = self.agents[i*2 : (i+1)*2]
         
         self.episodeDone = False
-        self.max_meta_turns = 1
+        self.max_meta_turns = 2
         self.meta_turn = 0
         self.interim_data = []
         self.turns = 0
@@ -105,7 +105,8 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                 for i in range(int(self.num_agents/2)):
                     squad_example = self.task.act()
                     premise = '\n'.join(squad_example['text'].split('\n')[:-1])
-                    premise = premise.split(".", 1)[0] + "." # Todo: preprocess sentence segmentation. This is a janky fix
+                    ## To-do: preprocess sentence segmentation. This is a janky fix ##
+                    premise = premise.split(".", 1)[0] + "."
                     prompt = {
                             'id': 'Prompt',
                             'text': premise
@@ -120,10 +121,12 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                 # concurrent work on HITs
                 self.writers_copy = self.agents.copy()
                 self.evaluators_copy = self.agents.copy()
+                self.another_evaluator_set = []
+                self.anotherer_evaluator_set = []
                 
                 # Lists where we will store responses
                 self.hypotheses = []
-                # Todo: make self.evals into a dict for neater code
+                ## To-do: make self.evals into a dict for neater code ##
                 self.ents = []
                 self.conts = []
                 self.neuts = []
@@ -153,7 +156,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                             self.hypotheses_collect[num-1] = self.hypotheses[i]
 
                 # Writers observe the other writer's hypotheses
-                for i in range(len(self.sets)):
+                for i in self.sets.keys():
                     showme = [self.hypotheses_collect[(i*2)+1], self.hypotheses_collect[(i*2)]] # 1,3 / 0,2
                     for j in range(2):
                         self.sets[i][j].observe({'id':'Other writer\'s claims', 'text':'\n<u>Def. correct</u>: ' + showme[j]['text'] + '\n<u>Def. incorrect</u>: ' + showme[j]['task_data'] + '\n<u>Neither</u>: ' + showme[j]['task_data2']}) #1,3
@@ -181,8 +184,9 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                 # Round robin exchange of prompts and claims for ranking
                 setnum = itertools.cycle(range(len(self.sets)))
                 next(setnum)
-                for i in range(len(self.sets)):
-                    num = next(setnum)
+                for i in self.sets.keys():
+                    # num = next(setnum)
+                    num = (i+1) % len(self.sets)
                     prompt = self.prompts[num]
                     self.map_entail[i] = self.observe_hypotheses(prompt, label, self.sets[i], self.entailments[num*2], self.entailments[(num*2)+1])
                             
@@ -190,40 +194,122 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
 
             if self.turns in range(3,6):
                 # Ranking entailments
+                if self.turns == 3:
+                    label = 'Definitely incorrect'
+                    show_hypotheses = self.contradictions
+                    mappy = self.map_contradict # shallow copy
+                elif self.turns == 4:
+                    label = 'Neither definitely correct nor definitely incorrect'
+                    show_hypotheses = self.neutrals
+                    mappy = self.map_neutral # shallow copy
+                else:
+                    pass
+                
                 for agent in self.evaluators_copy:
-                    evaluation = agent.act(blocking=False)
+                    if 'evaluation2' not in locals():
+                        evaluation = agent.act(blocking=False)
+                    elif 'evaluation2' in locals() and 'evaluation3' not in locals():
+                        print('here')
+                        evaluation2 = agent.act(blocking=False)
+                    else:
+                        evaluation3 = agent.act(blocking=False)
                     if evaluation is not None:
                         self.evals[self.turns-3].append(evaluation)
                         self.evaluators_copy.remove(agent)
+                        self.another_evaluator_set.append(agent)
 
-                        if len(self.evaluators_copy) == 0:
-                            # Show contradictions
-                            if self.turns == 3:
-                                label = 'Definitely incorrect'
-                                show_hypotheses = self.contradictions
-                                mappy = self.map_contradict # shallow copy
-                            elif self.turns == 4:
-                                label = 'Neither definitely correct nor definitely incorrect'
-                                show_hypotheses = self.neutrals
-                                mappy = self.map_neutral # shallow copy
-                            else:
-                                pass
+                        for agent in self.another_evaluator_set:
+                            for i in self.sets.keys():
+                                if agent in self.sets[i]:
+                                    prompt = self.prompts[(i+1) % len(self.sets)]
+                                    # TO-DO mappy[i] = self.observe_hypotheses(prompt, label, self.sets[i], show_hypotheses[num*2], show_hypotheses[(num*2)+1])
+                                    agent.observe({'id':'Prompt', 'text': prompt['text']+' + other stuff'})
+                            if 'evaluation2' not in locals():
+                                evaluation2 = None # agent.act(blocking=False)
+                            if evaluation2 is not None:
+                                self.evals[self.turns-3].append(evaluation2) #TO-DO
+                                self.another_evaluator_set.remove(agent)
+                                self.anotherer_evaluator_set.append(agent)
 
-                            if self.turns < 5:
-                                setnum = itertools.cycle(range(len(self.sets)))
-                                next(setnum)
-                                for i in range(len(self.sets)):
-                                    num = next(setnum)
-                                    prompt = self.prompts[num]
-                                    mappy[i] = self.observe_hypotheses(prompt, label, self.sets[i], show_hypotheses[num*2], show_hypotheses[(num*2)+1])
-                                # Make another copy of evaluators
-                                self.evaluators_copy = self.agents.copy()
-                            self.turns +=1
+                                for agent in self.anotherer_evaluator_set:
+                                    for i in self.sets.keys():
+                                        if agent in self.sets[i]:
+                                            prompt = self.prompts[(i+1) % len(self.sets)]
+                                            # TO-DO mappy[i] = self.observe_hypotheses(prompt, label, self.sets[i], show_hypotheses[num*2], show_hypotheses[(num*2)+1])
+                                            agent.observe({'id':'Prompt', 'text': prompt['text']+' + other stuff stuffing'})
+                                    if 'evaluation3' not in locals():
+                                        evaluation3 = None #agent.act(blocking=False)
+                                    if evaluation3 is not None:
+                                        self.evals[self.turns-3].append(evaluation3) #TO-DO
+                                        self.anotherer_evaluator_set.remove(agent)
+                                        # self.evaluators_copy.remove(agent)
+                                        if len(self.anotherer_evaluator_set) == 0:
+                                            self.turns += 1
+                                            exit(1)
+
+                        # self.evaluators_copy.remove(agent)
+
+                        # if len(self.evaluators_copy) == 0:
+                        #     # Show contradictions
+                        #     # if self.turns == 3:
+                        #     #     label = 'Definitely incorrect'
+                        #     #     show_hypotheses = self.contradictions
+                        #     #     mappy = self.map_contradict # shallow copy
+                        #     # elif self.turns == 4:
+                        #     #     label = 'Neither definitely correct nor definitely incorrect'
+                        #     #     show_hypotheses = self.neutrals
+                        #     #     mappy = self.map_neutral # shallow copy
+                        #     # else:
+                        #     #     pass
+
+                        #     if self.turns < 5:
+                        #         setnum = itertools.cycle(range(len(self.sets)))
+                        #         next(setnum)
+                        #         for i in range(len(self.sets)):
+                        #             # num = next(setnum)
+                        #             num = (i+1) % len(self.sets)
+                        #             prompt = self.prompts[num]
+                        #             mappy[i] = self.observe_hypotheses(prompt, label, self.sets[i], show_hypotheses[num*2], show_hypotheses[(num*2)+1])
+                        #         # Make another copy of evaluators
+                        #         self.evaluators_copy = self.agents.copy()
+                        #     self.turns +=1
+
+            # if self.turns in range(3,6):
+            #     # Ranking entailments
+            #     for agent in self.evaluators_copy:
+            #         evaluation = agent.act(blocking=False)
+            #         if evaluation is not None:
+            #             self.evals[self.turns-3].append(evaluation)
+            #             self.evaluators_copy.remove(agent)
+
+            #             if len(self.evaluators_copy) == 0:
+            #                 # Show contradictions
+            #                 if self.turns == 3:
+            #                     label = 'Definitely incorrect'
+            #                     show_hypotheses = self.contradictions
+            #                     mappy = self.map_contradict # shallow copy
+            #                 elif self.turns == 4:
+            #                     label = 'Neither definitely correct nor definitely incorrect'
+            #                     show_hypotheses = self.neutrals
+            #                     mappy = self.map_neutral # shallow copy
+            #                 else:
+            #                     pass
+
+            #                 if self.turns < 5:
+            #                     setnum = itertools.cycle(range(len(self.sets)))
+            #                     next(setnum)
+            #                     for i in range(len(self.sets)):
+            #                         num = next(setnum)
+            #                         prompt = self.prompts[num]
+            #                         mappy[i] = self.observe_hypotheses(prompt, label, self.sets[i], show_hypotheses[num*2], show_hypotheses[(num*2)+1])
+            #                     # Make another copy of evaluators
+            #                     self.evaluators_copy = self.agents.copy()
+            #                 self.turns +=1
 
             if self.turns == 6:
                 # Give feedback to rankers and writers
                 # Currently not checking for validaton agreement
-                # To-do: cleanup code in this section. it's a hot mess and breaks with > 4 agents
+                ## To-do: cleanup code in this section. it's a hot mess and breaks with > 4 agents ##
 
                 persons = [agent.demo_role for agent in self.agents]
                 label_types = ['Definitely Correct', 'Definitely Incorrect', 'Neither']
@@ -248,7 +334,8 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                     w1_rank = 0
                     agrm_rate = 0
                     evaluators = self.sets[j]
-                    num = next(setnum)
+                    # num = next(setnum)
+                    num = (i+1) % len(self.sets)
                     writers = self.sets[num]
                     for i, rankings in enumerate(set_evals[j]):
                         label = label_types[i]
@@ -330,7 +417,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                     writer_i_feedback[i] = [writer_feedback[j][1] if writer_feedback[j][0] == writer else None for j in range(len(writer_feedback))]
                 self.give_feedback(writer_i_feedback, self.agents, writing=True)
 
-                # Organize data for ease
+                # Organize data for future nikita
                 label_types = ['entailment', 'contradiction', 'neutral']
                 hypothesis_types = [self.entailments, self.contradictions, self.neutrals]
                 for i, evals in enumerate(self.evals):
@@ -350,8 +437,6 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
 
                 data = pd.DataFrame(self.ents + self.conts + self.neuts)
                 self.interim_data.append(data.to_dict()) # dict so we don't require picklin
-                # self.interim_data.append(self.get_intermediate_task_data())
-
                 self.meta_turn += 1
                 self.turns = 0
 
@@ -370,7 +455,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                                             '\n<b>Label</b>: '+ label +
                                             '\n\n<b>'+hyp_0['id']+'</b>: '+hyp_0['text'] + 
                                             '\n<b>'+hyp_1['id']+'</b>: '+hyp_1['text'],
-                                            'task_data': hyp_0['task_data']})
+                                            'task_data': hyp_0['task_data'] })
             else:
                 agent.observe({'id':'Prompt', 'text':prompt['text'] + 
                                             '\n<b>Label</b>: '+ label +
@@ -411,18 +496,6 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                 agents[i].observe({'id':'Thank you! Here are your bonuses for ranking based on agreement with the other evaluator', 'text':text})
             else: # writing feedback
                 agents[i].observe({'id':'And these are your bonuses for the claims you wrote in Phase 1', 'text':text})
-
-    def get_intermediate_task_data(self):
-        # brings important data together before the next meta-turn
-        return {
-            'sub-hit': self.meta_turn,
-            'premises': self.prompts,
-            'hypotheses': self.hypotheses_collect,
-            'rank-e': self.ents,
-            'rank-c': self.conts,
-            'rank-n': self.neuts,
-            'flip-maps': self.maps,
-        }
 
     def episode_done(self):
         return self.episodeDone
