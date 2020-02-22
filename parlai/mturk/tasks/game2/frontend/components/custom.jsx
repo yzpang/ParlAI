@@ -799,7 +799,22 @@ class CoreChatMessage extends React.Component {
         </small>
       );
     }
-    let display_message = this.props.message;
+    // let display_message = this.props.message;
+    // let hypothesis_contradiction = this.props.task_data;
+    // let hypothesis_neutral = this.props.task_data2;
+    let display_message = null;
+    if (this.props.task_data && !this.props.task_data['respond_with_form'] && !this.props.task_data3) {
+      let hypothesis_entailment = this.props.message;
+      let hypothesis_contradiction = this.props.task_data;
+      let hypothesis_neutral = this.props.task_data2;
+      display_message = (
+        '\n<u>Def. correct</u>: ' + hypothesis_entailment + '\n' + 
+        '<u>Def incorrect</u>: ' + hypothesis_contradiction + '\n' +
+        '<u>Neither</u>: ' + hypothesis_neutral
+      );
+    } else {
+      display_message = this.props.message;
+    }
     return (
       <div className={'row'} style={{ marginLeft: '0', marginRight: '0' }}>
         <div
