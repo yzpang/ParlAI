@@ -693,6 +693,7 @@ class MessageList extends React.Component {
           message={m.text}
           task_data={m.task_data}
           task_data2={m.task_data2}
+          task_data3={m.task_data3}
           message_id={m.message_id}
           duration={this.props.is_review ? m.duration : undefined}
         />
@@ -803,7 +804,8 @@ class CoreChatMessage extends React.Component {
     // let hypothesis_contradiction = this.props.task_data;
     // let hypothesis_neutral = this.props.task_data2;
     let display_message = null;
-    if (this.props.task_data && !this.props.task_data['respond_with_form'] && !this.props.task_data3) {
+    if (this.props.task_data && !this.props.task_data['respond_with_form'] && 
+      (Object.entries(this.props.task_data3).length === 0)) {
       let hypothesis_entailment = this.props.message;
       let hypothesis_contradiction = this.props.task_data;
       let hypothesis_neutral = this.props.task_data2;
