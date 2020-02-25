@@ -123,6 +123,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                 self.evaluators_copy = self.agents.copy()
                 self.another_evaluator_set = []
                 self.anotherer_evaluator_set = []
+                self.keep_evaluator_status = []
                 
                 # Lists where we will store responses
                 self.hypotheses = []
@@ -185,128 +186,60 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                 setnum = itertools.cycle(range(len(self.sets)))
                 next(setnum)
                 for i in self.sets.keys():
-                    # num = next(setnum)
                     num = (i+1) % len(self.sets)
                     prompt = self.prompts[num]
-                    self.map_entail[i] = self.observe_hypotheses(prompt, label, self.sets[i], self.entailments[num*2], self.entailments[(num*2)+1])
+                    self.map_entail[self.sets[i][0]], self.map_entail[self.sets[i][1]] = self.observe_hypotheses(prompt, label, self.sets[i], self.entailments[num*2], self.entailments[(num*2)+1])
                             
                 self.turns += 1
 
-            if self.turns in range(3,6):
+            if self.turns == 3:
                 # Ranking entailments
-                if self.turns == 3:
-                    label = 'Definitely incorrect'
-                    show_hypotheses = self.contradictions
-                    mappy = self.map_contradict # shallow copy
-                elif self.turns == 4:
-                    label = 'Neither definitely correct nor definitely incorrect'
-                    show_hypotheses = self.neutrals
-                    mappy = self.map_neutral # shallow copy
-                else:
-                    pass
-                
+                # Show entailment set         
                 for agent in self.evaluators_copy:
-                    if 'evaluation2' not in locals():
-                        evaluation = agent.act(blocking=False)
-                    elif 'evaluation2' in locals() and 'evaluation3' not in locals():
-                        print('here')
-                        evaluation2 = agent.act(blocking=False)
-                    else:
-                        evaluation3 = agent.act(blocking=False)
+                    evaluation = agent.act(blocking=False)
                     if evaluation is not None:
-                        self.evals[self.turns-3].append(evaluation)
+                        self.ents.append(evaluation)
                         self.evaluators_copy.remove(agent)
-                        self.another_evaluator_set.append(agent)
-
-                        for agent in self.another_evaluator_set:
+                        if agent not in self.another_evaluator_set:
+                            self.another_evaluator_set.append(agent)
+                            self.keep_evaluator_status.append(agent)
                             for i in self.sets.keys():
                                 if agent in self.sets[i]:
-                                    prompt = self.prompts[(i+1) % len(self.sets)]
-                                    # TO-DO mappy[i] = self.observe_hypotheses(prompt, label, self.sets[i], show_hypotheses[num*2], show_hypotheses[(num*2)+1])
-                                    agent.observe({'id':'Prompt', 'text': prompt['text']+' + other stuff'})
-                            if 'evaluation2' not in locals():
-                                evaluation2 = None # agent.act(blocking=False)
-                            if evaluation2 is not None:
-                                self.evals[self.turns-3].append(evaluation2) #TO-DO
-                                self.another_evaluator_set.remove(agent)
-                                self.anotherer_evaluator_set.append(agent)
+                                    num = (i+1) % len(self.sets)
+                                    prompt = self.prompts[num]
+                            label = 'Definitely incorrect'
+                            show_hypotheses = self.contradictions
+                            mappy = self.map_contradict # shallow copy
+                            mappy[agent], _ = self.observe_hypotheses(prompt, label, [agent], show_hypotheses[num*2], show_hypotheses[(num*2)+1])
 
-                                for agent in self.anotherer_evaluator_set:
-                                    for i in self.sets.keys():
-                                        if agent in self.sets[i]:
-                                            prompt = self.prompts[(i+1) % len(self.sets)]
-                                            # TO-DO mappy[i] = self.observe_hypotheses(prompt, label, self.sets[i], show_hypotheses[num*2], show_hypotheses[(num*2)+1])
-                                            agent.observe({'id':'Prompt', 'text': prompt['text']+' + other stuff stuffing'})
-                                    if 'evaluation3' not in locals():
-                                        evaluation3 = None #agent.act(blocking=False)
-                                    if evaluation3 is not None:
-                                        self.evals[self.turns-3].append(evaluation3) #TO-DO
-                                        self.anotherer_evaluator_set.remove(agent)
-                                        # self.evaluators_copy.remove(agent)
-                                        if len(self.anotherer_evaluator_set) == 0:
-                                            self.turns += 1
-                                            exit(1)
+                # Show contradiction set
+                for agent in self.another_evaluator_set:
+                    evaluation2 = agent.act(blocking=False)
+                    if evaluation2 is not None:
+                        self.conts.append(evaluation2)
+                        self.another_evaluator_set.remove(agent)
+                        if agent not in self.anotherer_evaluator_set:
+                            self.anotherer_evaluator_set.append(agent)
+                            self.keep_evaluator_status.append(agent)
+                            for i in self.sets.keys():
+                                if agent in self.sets[i]:
+                                    num = (i+1) % len(self.sets)
+                                    prompt = self.prompts[num]
+                            label = 'Neither definitely correct nor definitely incorrect'
+                            show_hypotheses = self.neutrals
+                            mappy = self.map_neutral # shallow copy
+                            mappy[agent], _ = self.observe_hypotheses(prompt, label, [agent], show_hypotheses[num*2], show_hypotheses[(num*2)+1])
 
-                        # self.evaluators_copy.remove(agent)
+                # Show neutral set
+                for agent in self.anotherer_evaluator_set:
+                    evaluation3 = agent.act(blocking=False)
+                    if evaluation3 is not None:
+                        self.neuts.append(evaluation3)
+                        self.anotherer_evaluator_set.remove(agent)
+                        if len(self.anotherer_evaluator_set) == 0 and (len(self.keep_evaluator_status) == len(self.agents)*2):
+                            self.turns += 1
 
-                        # if len(self.evaluators_copy) == 0:
-                        #     # Show contradictions
-                        #     # if self.turns == 3:
-                        #     #     label = 'Definitely incorrect'
-                        #     #     show_hypotheses = self.contradictions
-                        #     #     mappy = self.map_contradict # shallow copy
-                        #     # elif self.turns == 4:
-                        #     #     label = 'Neither definitely correct nor definitely incorrect'
-                        #     #     show_hypotheses = self.neutrals
-                        #     #     mappy = self.map_neutral # shallow copy
-                        #     # else:
-                        #     #     pass
-
-                        #     if self.turns < 5:
-                        #         setnum = itertools.cycle(range(len(self.sets)))
-                        #         next(setnum)
-                        #         for i in range(len(self.sets)):
-                        #             # num = next(setnum)
-                        #             num = (i+1) % len(self.sets)
-                        #             prompt = self.prompts[num]
-                        #             mappy[i] = self.observe_hypotheses(prompt, label, self.sets[i], show_hypotheses[num*2], show_hypotheses[(num*2)+1])
-                        #         # Make another copy of evaluators
-                        #         self.evaluators_copy = self.agents.copy()
-                        #     self.turns +=1
-
-            # if self.turns in range(3,6):
-            #     # Ranking entailments
-            #     for agent in self.evaluators_copy:
-            #         evaluation = agent.act(blocking=False)
-            #         if evaluation is not None:
-            #             self.evals[self.turns-3].append(evaluation)
-            #             self.evaluators_copy.remove(agent)
-
-            #             if len(self.evaluators_copy) == 0:
-            #                 # Show contradictions
-            #                 if self.turns == 3:
-            #                     label = 'Definitely incorrect'
-            #                     show_hypotheses = self.contradictions
-            #                     mappy = self.map_contradict # shallow copy
-            #                 elif self.turns == 4:
-            #                     label = 'Neither definitely correct nor definitely incorrect'
-            #                     show_hypotheses = self.neutrals
-            #                     mappy = self.map_neutral # shallow copy
-            #                 else:
-            #                     pass
-
-            #                 if self.turns < 5:
-            #                     setnum = itertools.cycle(range(len(self.sets)))
-            #                     next(setnum)
-            #                     for i in range(len(self.sets)):
-            #                         num = next(setnum)
-            #                         prompt = self.prompts[num]
-            #                         mappy[i] = self.observe_hypotheses(prompt, label, self.sets[i], show_hypotheses[num*2], show_hypotheses[(num*2)+1])
-            #                     # Make another copy of evaluators
-            #                     self.evaluators_copy = self.agents.copy()
-            #                 self.turns +=1
-
-            if self.turns == 6:
+            if self.turns == 4:
                 # Give feedback to rankers and writers
                 # Currently not checking for validaton agreement
                 ## To-do: cleanup code in this section. it's a hot mess and breaks with > 4 agents ##
@@ -347,6 +280,8 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
 
                         # Map the selected choices to "unflip" the ordering
                         # and collect ranker justifications
+                        import pdb; pdb.set_trace()
+                        ## !TO-DO: adapt to new incoming maps
                         if rankings[1]['id'] == persons[(j*2)+1]: # Even numbered Persons 
                             rankings[1]['text'] = self.maps[i][j][rankings[1]['text']]
                             if rankings[0]['task_data'] is not '':
@@ -463,20 +398,28 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                                             '\n<b>'+hyp_1['id']+'</b>: '+hyp_1['text']})
 
         flip = random.randint(0,1)
+        mappy = [None, None]
         if flip == 0:
-            mappy = self.noflip
-            for agent in agents:
+            # mappy_0 = self.noflip
+            for i, agent in enumerate(agents):
                 make_observation(agent, hyp0, hyp1)
+                mappy[i] = self.noflip
         else:
-            mappy = self.yesflip
             flip0 = copy.deepcopy(hyp0)
             flip1 = copy.deepcopy(hyp1)
             flip0['id'] = 'Claim 2'
             flip1['id'] = 'Claim 1'
-            make_observation(agents[0], hyp0, hyp1)
-            make_observation(agents[1], flip1, flip0)
-
-        return mappy
+            if len(agents) == 2:
+                make_observation(agents[0], hyp0, hyp1)
+                make_observation(agents[1], flip1, flip0)
+                mappy[0] = self.noflip
+                mappy[1] = self.yesflip
+            elif len(agents) == 1:
+                make_observation(agents[0], flip1, flip0)
+                mappy[0] = self.yesflip
+            else:
+                assert "Do not currently support more than 2 agents in a single set."
+        return mappy[0], mappy[1]
 
     def give_feedback(self, all_feedback, agents, writing=False):
         # agent.observe({'id':'Feedback Phase', 'text':'<b>Thank you! Here are your bonuses for ranking based on agreement with the other evaluator,</b>'})
