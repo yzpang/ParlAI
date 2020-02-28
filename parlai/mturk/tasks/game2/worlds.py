@@ -27,40 +27,6 @@ class OnboardingWorld(MTurkOnboardWorld):
         self.mturk_agent.observe(ad)
         self.episodeDone = True
 
-class WriterOnboardingWorld(MTurkOnboardWorld):
-    """Example onboarding world. Sends a message from the world to the
-    worker and then exits as complete after the worker uses the interface
-    """
-
-    def parley(self):
-        ad = {}
-        ad['id'] = 'System'
-        ad['text'] = (
-            "Welcome onboard! You'll be playing the role of the writer. "
-            "You'll be given a prompt and your task is to write three claims "
-            "in relation with this prompt."
-        )
-        self.mturk_agent.observe(ad)
-        self.episodeDone = True
-
-
-class EvaluatorOnboardingWorld(MTurkOnboardWorld):
-    """Example onboarding world. Sends a message from the world to the
-    worker and then exits as complete after the worker uses the interface
-    """
-
-    def parley(self):
-        ad = {}
-        ad['id'] = 'System'
-        ad['text'] = (
-            "Welcome onboard! You'll be playing the evaluator. You'll "
-            "be shown a prompt, a label, and a set of possible claims. Your task is to  "
-            "rank the claims based on creativity, complexity, and relevance."
-        )
-        self.mturk_agent.observe(ad)
-        self.episodeDone = True
-
-
 class MultiRoleAgentWorld(MTurkTaskWorld):
     """
     World to demonstrate workers with assymetric roles. This task amounts
@@ -106,7 +72,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                     squad_example = self.task.act()
                     premise = '\n'.join(squad_example['text'].split('\n')[:-1])
                     ## To-do: preprocess sentence segmentation. This is a janky fix ##
-                    premise = premise.split(".", 1)[0] + "."
+                    # premise = premise.split(".", 1)[0] + "."
                     prompt = {
                             'id': 'Prompt',
                             'text': premise
@@ -120,9 +86,9 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                 # Make copies of objects of workers, we need this to have
                 # concurrent work on HITs
                 self.writers_copy = self.agents.copy()
-                self.evaluators_copy = self.agents.copy()
-                self.another_evaluator_set = []
-                self.anotherer_evaluator_set = []
+                self.evaluators_ent = self.agents.copy()
+                self.evaluators_cont = []
+                self.evaluators_neut = []
                 self.keep_evaluator_status = []
                 
                 # Lists where we will store responses
@@ -195,13 +161,13 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
             if self.turns == 3:
                 # Ranking entailments
                 # Show entailment set         
-                for agent in self.evaluators_copy:
+                for agent in self.evaluators_ent:
                     evaluation = agent.act(blocking=False)
                     if evaluation is not None:
                         self.ents.append(evaluation)
-                        self.evaluators_copy.remove(agent)
-                        if agent not in self.another_evaluator_set:
-                            self.another_evaluator_set.append(agent)
+                        self.evaluators_ent.remove(agent)
+                        if agent not in self.evaluators_cont:
+                            self.evaluators_cont.append(agent)
                             self.keep_evaluator_status.append(agent)
                             for i in self.sets.keys():
                                 if agent in self.sets[i]:
@@ -213,13 +179,13 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                             mappy[agent], _ = self.observe_hypotheses(prompt, label, [agent], show_hypotheses[num*2], show_hypotheses[(num*2)+1])
 
                 # Show contradiction set
-                for agent in self.another_evaluator_set:
+                for agent in self.evaluators_cont:
                     evaluation2 = agent.act(blocking=False)
                     if evaluation2 is not None:
                         self.conts.append(evaluation2)
-                        self.another_evaluator_set.remove(agent)
-                        if agent not in self.anotherer_evaluator_set:
-                            self.anotherer_evaluator_set.append(agent)
+                        self.evaluators_cont.remove(agent)
+                        if agent not in self.evaluators_neut:
+                            self.evaluators_neut.append(agent)
                             self.keep_evaluator_status.append(agent)
                             for i in self.sets.keys():
                                 if agent in self.sets[i]:
@@ -231,12 +197,12 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                             mappy[agent], _ = self.observe_hypotheses(prompt, label, [agent], show_hypotheses[num*2], show_hypotheses[(num*2)+1])
 
                 # Show neutral set
-                for agent in self.anotherer_evaluator_set:
+                for agent in self.evaluators_neut:
                     evaluation3 = agent.act(blocking=False)
                     if evaluation3 is not None:
                         self.neuts.append(evaluation3)
-                        self.anotherer_evaluator_set.remove(agent)
-                        if len(self.anotherer_evaluator_set) == 0 and (len(self.keep_evaluator_status) == len(self.agents)*2):
+                        self.evaluators_neut.remove(agent)
+                        if len(self.evaluators_neut) == 0 and (len(self.keep_evaluator_status) == len(self.agents)*2):
                             self.turns += 1
 
             if self.turns == 4:
@@ -268,7 +234,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                     agrm_rate = 0
                     evaluators = self.sets[j]
                     # num = next(setnum)
-                    num = (i+1) % len(self.sets)
+                    num = (j+1) % len(self.sets)
                     writers = self.sets[num]
                     for i, rankings in enumerate(set_evals[j]):
                         label = label_types[i]
@@ -280,16 +246,17 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
 
                         # Map the selected choices to "unflip" the ordering
                         # and collect ranker justifications
-                        import pdb; pdb.set_trace()
                         ## !TO-DO: adapt to new incoming maps
                         if rankings[1]['id'] == persons[(j*2)+1]: # Even numbered Persons 
-                            rankings[1]['text'] = self.maps[i][j][rankings[1]['text']]
+                            this_ranker = self.agents[int(persons[(j*2)+1][-1])-1]
+                            rankings[1]['text'] = self.maps[i][this_ranker][rankings[1]['text']]
                             if rankings[0]['task_data'] is not '':
                                 eval0_justifications.append(label + ': ' + rankings[0]['task_data'])
                             if rankings[1]['task_data'] is not '':
                                 eval1_justifications.append(label + ': ' + rankings[1]['task_data'])
                         else:
-                            rankings[0]['text'] = self.maps[i][j][rankings[0]['text']]
+                            this_ranker = self.agents[int(persons[j*2][-1])-1]
+                            rankings[0]['text'] = self.maps[i][this_ranker][rankings[0]['text']]
                             if rankings[0]['task_data'] is not '':
                                 eval1_justifications.append(label + ': ' + rankings[0]['task_data'])
                             if rankings[1]['task_data'] is not '':
@@ -372,6 +339,14 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
 
                 data = pd.DataFrame(self.ents + self.conts + self.neuts)
                 self.interim_data.append(data.to_dict()) # dict so we don't require picklin
+
+                # Pause before moving to next prompt
+                time.sleep(10)
+                for agent in self.agents:
+                    agent.observe({'id':'<font color="black">Next round</font>', 
+                                   'text':'<font color="black"><b>Thank you! In a moment we will start the next round. Once again, you\'ll be asked to write claims for a new prompt.</b></font>'})
+                time.sleep(3)
+
                 self.meta_turn += 1
                 self.turns = 0
 

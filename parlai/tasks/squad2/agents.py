@@ -94,7 +94,10 @@ class DefaultTeacher(DialogTeacher):
             suffix = 'train'
         else:
             suffix = 'dev'
-        opt['datafile'] = os.path.join(opt['datapath'], 'SQuAD2', suffix + '-v2.0.json')
+        if opt['data_sentences']:
+            opt['datafile'] = os.path.join(opt['datapath'], 'SQuAD2', 'segmented', suffix + '-seg' + '-v2.0.json')
+        else:
+            datapath = os.path.join(opt['datapath'], 'SQuAD2', suffix + '-v2.0.json')
         self.id = 'squad2'
         super().__init__(opt, shared)
 

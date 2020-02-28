@@ -430,6 +430,13 @@ class ParlaiParser(argparse.ArgumentParser):
             default=None,
             help='Specify location to use for scratch builds and such.',
         )
+        mturk.add_argument(
+            '-sents',
+            '--data-sentences',
+            default=False,
+            action='store_true',
+            help='support only for squad2. get sentence segmented context from teacher model',
+        )
 
         # it helps to indicate to agents that they're in interactive mode, and
         # can avoid some otherwise troublesome behavior (not having candidates,

@@ -679,8 +679,7 @@ class MessageList extends React.Component {
     // Handles rendering messages from both the user and anyone else
     // on the thread - agent_ids for the sender of a message exist in
     // the m.id field.
-
-    // let XChatMessage = getCorrectComponent('XChatMessage', this.props.v_id);
+    
     let onClickMessage = this.props.onClickMessage;
     if (typeof onClickMessage !== 'function') {
       onClickMessage = idx => {};
@@ -710,74 +709,6 @@ class MessageList extends React.Component {
   }
 }
 
-// class WriterChatMessage extends React.Component {
-//   render() {
-//     let float_loc = 'left';
-//     let alert_class = 'alert-warning';
-//     if (this.props.is_self) {
-//       float_loc = 'right';
-//       alert_class = 'alert-info';
-//     }
-//     let duration = null;
-//     if (this.props.duration !== undefined) {
-//       let duration_seconds = Math.floor(this.props.duration / 1000) % 60;
-//       let duration_minutes = Math.floor(this.props.duration / 60000);
-//       let min_text = duration_minutes > 0 ? duration_minutes + ' min' : '';
-//       let sec_text = duration_seconds > 0 ? duration_seconds + ' sec' : '';
-//       duration = (
-//         <small>
-//           <br />
-//           <i>Duration: </i>
-//           {min_text + ' ' + sec_text}
-//         </small>
-//       );
-//     }
-
-//     return (
-//       <div>
-//       <div className={'row'} style={{ marginLeft: '0', marginRight: '0' }}>
-//         <div
-//           className={'alert ' + alert_class}
-//           role="alert"
-//           style={{ float: float_loc, display: 'table' }}
-//         >
-//           <span style={{ fontSize: '16px', whiteSpace: 'pre-wrap' }}>
-//             <b>{this.props.agent_id}</b>: {this.props.message}
-//           </span>
-//           {duration}
-//         </div>
-//       </div>
-//       { this.props.task_data && (
-//         <div>
-//         <div className={'row'} style={{ marginLeft: '0', marginRight: '0' }}>
-//           <div
-//             className={'alert ' + alert_class}
-//             role="alert"
-//             style={{ float: float_loc, display: 'table' }}
-//           >
-//             <span style={{ fontSize: '16px', whiteSpace: 'pre-wrap' }}>
-//                 <b>{this.props.agent_id}</b>: {this.props.task_data}
-//             </span>
-//           </div>
-//         </div>
-//         <div className={'row'} style={{ marginLeft: '0', marginRight: '0' }}>
-//           <div
-//             className={'alert ' + alert_class}
-//             role="alert"
-//             style={{ float: float_loc, display: 'table' }}
-//           >
-//             <span style={{ fontSize: '16px', whiteSpace: 'pre-wrap' }}>
-//                 <b>{this.props.agent_id}</b>: {this.props.task_data2}
-//             </span>
-//           </div>
-//         </div>
-//         </div>
-//       )}
-//       </div>
-//     );
-//   }
-// }
-
 class CoreChatMessage extends React.Component {
   render() {
     let float_loc = 'left';
@@ -800,9 +731,6 @@ class CoreChatMessage extends React.Component {
         </small>
       );
     }
-    // let display_message = this.props.message;
-    // let hypothesis_contradiction = this.props.task_data;
-    // let hypothesis_neutral = this.props.task_data2;
     let display_message = null;
     if (this.props.task_data && !this.props.task_data['respond_with_form'] && 
       (Object.entries(this.props.task_data3).length === 0)) {
