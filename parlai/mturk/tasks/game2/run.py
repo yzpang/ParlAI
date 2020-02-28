@@ -42,6 +42,8 @@ def main():
     task_opt['datatype'] = 'train'
     task_opt['datapath'] = opt['datapath']
 
+    assert (task_opt['num_workers'] % 2 == 0), "The game only supports even number of workers, with a minimum of 4 people."
+
     # Select an agent_id that worker agents will be assigned in their world
     persons = {}
     mturk_agent_roles = []
