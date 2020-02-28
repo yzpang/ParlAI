@@ -41,15 +41,13 @@ def main():
     task_opt = opt.copy()
     task_opt['datatype'] = 'train'
     task_opt['datapath'] = opt['datapath']
-    task_opt['num_agents'] = 4 # To-do: make this a command line parameter
 
     # Select an agent_id that worker agents will be assigned in their world
     persons = {}
     mturk_agent_roles = []
-    for i in range(1,task_opt['num_agents']+1):
+    for i in range(1, task_opt['num_workers']+1):
         persons[i] = 'Person'+str(i)
         mturk_agent_roles.append(persons[i])
-    # mturk_agent_roles = ['Person1', 'Person2', 'Person3', 'Person4']#
 
     # Instantiate an MTurkManager with the given options and a maximum number
     # of agents per world of 1 (based on the length of mturk_agent_ids)
@@ -130,7 +128,6 @@ def main():
             # run the world to completion
             while not world.episode_done():
                 world.parley()
-            # import pdb; pdb.set_trace()
 
             # shutdown and review the work
             world.shutdown()
