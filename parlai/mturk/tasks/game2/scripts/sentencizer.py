@@ -12,10 +12,11 @@ import copy
 
 nlp = spacy.load("en_core_web_sm")
 
-train_datapath = "train-v2.0.json"
-dev_datapath = "dev-v2.0.json"
-new_train_file = open(os.path.join("segmented", "train-seg-v2.0.json"), "w")
-new_dev_file = open(os.path.join("segmented", "dev-seg-v2.0.json"), "w")
+path = "~/Documents/General/nlp_research/data/SQuAD2/"
+train_datapath = path + "train-v2.0.json"
+dev_datapath = path + "dev-v2.0.json"
+new_train_file = open(os.path.join(path, "segmented", "train-seg-v2.0.json"), "w")
+new_dev_file = open(os.path.join(path, "segmented", "dev-seg-v2.0.json"), "w")
 
 def segment_data(path):
     passed = 0
@@ -32,10 +33,7 @@ def segment_data(path):
                 # convert from spacy span back to string
                 sentence = str(sentence)
                 # jankily handle bad sentence segmentation and short sentences
-                if (sentence[-1] not in ['.', '!', '?']) or (sentence[0] != sentence[0].upper()):
-                    passed += 1
-                    pass
-                elif len(sentence.split(" ")) < 20:
+                if (sentence[-1] not in ['.', '!', '?', '"', '\'', '`'] and sentence[-2:] not in ['.)', '.]']) or (sentence[0] != sentence[0].upper()):
                     passed += 1
                     pass
                 else:
