@@ -432,10 +432,17 @@ class ParlaiParser(argparse.ArgumentParser):
         )
         mturk.add_argument(
             '-sents',
-            '--data-sentences',
+            '--data_sentences',
             default=False,
             action='store_true',
             help='support only for squad2. get sentence segmented context from teacher model',
+        )
+        mturk.add_argument(
+            '--num_workers',
+            dest='num_workers',
+            default=4,
+            type=int,
+            help='Max number of hits each worker can perform during current group run',
         )
 
         # it helps to indicate to agents that they're in interactive mode, and
