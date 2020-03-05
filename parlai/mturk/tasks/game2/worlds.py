@@ -208,7 +208,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
             if self.turns == 4:
                 # Give feedback to rankers and writers
                 # Currently not checking for validaton agreement
-                ## To-do: cleanup code in this section. it's a hot mess and breaks with > 4 agents ##
+                ## To-do: cleanup code in this section. it's a hot mess and might break with > 4 agents ##
 
                 persons = [agent.demo_role for agent in self.agents]
                 label_types = ['Definitely Correct', 'Definitely Incorrect', 'Neither']
@@ -246,7 +246,6 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
 
                         # Map the selected choices to "unflip" the ordering
                         # and collect ranker justifications
-                        ## !TO-DO: adapt to new incoming maps
                         if rankings[1]['id'] == persons[(j*2)+1]: # Even numbered Persons 
                             this_ranker = self.agents[int(persons[(j*2)+1][-1])-1]
                             rankings[1]['text'] = self.maps[i][this_ranker][rankings[1]['text']]
@@ -338,7 +337,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                         evals[j]['hyp2-validation'] = evals[j].pop('task_data3')
 
                 data = pd.DataFrame(self.ents + self.conts + self.neuts)
-                self.interim_data.append(data.to_dict()) # dict so we don't require picklin
+                self.interim_data.append(data.to_dict()) # dict so we don't require pickling
 
                 # Pause before moving to next prompt
                 time.sleep(10)
@@ -397,8 +396,6 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
         return mappy[0], mappy[1]
 
     def give_feedback(self, all_feedback, agents, writing=False):
-        # agent.observe({'id':'Feedback Phase', 'text':'<b>Thank you! Here are your bonuses for ranking based on agreement with the other evaluator,</b>'})
-        # writer.observe({'id':'Claim writing feedback', 'text':'<b> And these are your bonuses for the claims you wrote in Phase 1,</b>'})
         for i in all_feedback.keys():
             text = ''
             for feedback in all_feedback[i]:
