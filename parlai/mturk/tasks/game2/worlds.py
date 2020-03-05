@@ -240,7 +240,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                         label = label_types[i]
                         writer_bonus_message = {'id': label, 'text': 'You ranked 1st! Bonus = $' + str(self.writer_bonus) +'.'}
                         writer_nobonus_message = {'id':'No bonus', 'text':'Unfortunately you ranked 2nd on all 3 claims.'}
-                        noagrm_bonus_message = {'id': label, 'text': 'The evaluators did not agree. Bonus = $' + str(self.writer_bonus/2) + '.'}
+                        noagrm_bonus_message = {'id': label, 'text': 'The evaluators did not agree. Bonus = $' + str(self.ranker_bonus) + '.'} # Set as ranker_bonus to avoid incentivizing workers to always disagree on ranking
                         agrm_bonus_message = {'id': label, 'text': 'You agreed with the other evaluator! Bonus = $' + str(self.ranker_bonus) + '.'}
                         eval_nobonus_message = {'id': 'No bonus', 'text': 'Unfortunately you disagreed with the other evaluator on all 3 sets.'}
 

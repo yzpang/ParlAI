@@ -22,13 +22,13 @@ view of search results, and in the HIT and assignment screens.
 """
 task_config[
     'hit_description'
-] = 'As a writer: Given the prompt sentence write three sentences related to the prompt.'
+] = 'As a writer you\'ll write 3 claims given a prompt and then as an evaluator, you will rank claims for a differnet prompt.'
 
 
 """One or more words or phrases that describe the HIT, separated by commas.
 On MTurk website, these words are used in searches to find HITs.
 """
-task_config['hit_keywords'] = 'textual entailment,nli,rte,entailment,sentence creation,writing'
+task_config['hit_keywords'] = 'textual entailment,nli,rte,entailment,sentence creation,writing,evaluation'
 
 
 """A detailed task description that will be shown on the HIT task preview page
@@ -37,25 +37,25 @@ and on the left side of the chat page. Supports HTML formatting.
 task_config[
     'task_description'
 ] = '''
-In this task, we have two types of roles: <b>writers and evaluators</b>. Please read the full instructions regardless of what role you are assigned since this will help you with doing well at the task. <br><br>
+There are two phases in each HIT: the <b>writing phase</b> and the <b>evaluating phase</b>. Each HIT has 4 people on it, and you will be paired with one person.<br><br>
 
-<h4><u> Writers </u></h4>
-<p> You will be shown a prompt that describes a situation or event. Using only this description and what you know about the world, please write</p>
+<h4><u>Phase 1: Writing</u></h4>
+<p> You, and your partner, will be shown a prompt that describes a situation or event. Using only this description and what you know about the world, please write</p>
 <ul>
 	<li>One claim that is <strong>definitely correct</strong><em>&nbsp;</em>about the situation or event in the prompt.</li>
 	<li>One claim that is&nbsp;<strong>definitely incorrect</strong>&nbsp;about the situation or event in the prompt.</li>
 	<li>One claim that is&nbsp;<strong>neither</strong> definitely correct nor incorrect about the situation or event in the prompt.</li>
 </ul>
-<font color="red">We encourage you to write claims that are creative and require non-trivial kinds of reasoning.</font> Your bonuses will be based on how evaluators rank you, they will be ranking you based on creativity of your claim.<br>
+<font color="red">We encourage you to write claims that are creative and require non-trivial kinds of reasoning.</font> Your partner on this HIT will also be writing claims for this prompt and your bonuses will be based on how evaluators rank you versus your partner. We will show you the claims your partner wrote.<br>
 
-<h4><u> Evaluators </u></h4>
-<p> You will be shown a prompt and then once the writers are done composing their claims, you will shown a label and 2 possible claims. The three types of labels---definitely correct, definitely incorrect, and neither---are explained above in the instructions for writers. For each label you will be asked to do the following,</p>
+<h4><u>Phase 2: Evaluating</u></h4>
+<p> You will be shown a new prompt and the claims written by the 2 other people on this HIT. You will have to evaluate claims for each of the three labels---definitely correct, definitely incorrect, and neither---explained in the previous section. For each label and set of claims you will be asked to do the following,</p>
 <ul>
-	<li> You will be given the label and the two claims written by different people. Your first task is to <font color="red">decide if the claims fit the label and the prompt.</font></li>
-	<li> Then, your task is to <font color="red">rank the claim in terms of creativity and complexity of reasoning.</font></li>
-	<li> You have the option to leave a justification for your ranking in a text box. Anything you write here will be shown to the other evaluator at the end of ranking for the current prompt. We encourage you to use this text box generously!</li>
+	<li> Given the label and the two claims written by different people, <font color="red">decide if the claims fit the label and the prompt.</font></li>
+	<li> Then, <font color="red">rank the claim in terms of creativity and complexity of reasoning.</font></li>
+	<li> You have the option to leave a justification for your ranking in a text box. Anything you write here will be shown to your partner and to the writers of the claims at the end of the evaluation phase. We encourage you to use this text box generously!</li>
 </ul>
-Your bonuses will be based on agreement with the other evaluators on the HIT. <br>
+Your bonuses will be based on your agreement with your partner on the rankings of the claims.<br>
 
 <h4><u> Examples </u></h4>
 <p>
@@ -102,11 +102,13 @@ Hypothesis: Mother in law's tongue is easy to maintain, growing quickly under mo
 
 
 <!-- TODO: COMPLETE THIS. ADD BONUS BREAKDOWN -->
-<h4><u> Task Bonuses (TBD) </u></h4>
-<p>
-As an evaluator, you will be given bonuses based on how well you agree with other the other evaluator. We encourage you to use the text box to help communicate your reasoning to the other evaluator.<br>
-As a writer, you will be given bonuses based on how your claims are ranked by evaluators.
-</p><br>
+<h4><u>Bonuses</u></h4>
+<p>You will have opportunities to get bonuses in both phases,</p>
+<ul>
+	<li>Writing phase: your bonus is be based on your rank. For each claim that you rank higher than you partner, you will receive a $0.3 bonus. If the evaluators don't agree on a ranking for a label, then you and your partner will get $0.1.</li>
+	<li>Evaluation phase: your bonus is based on your agreement with your partner. For a label, if you both rank the same claim first then you'll get a $0.1 bonus. If you don't agree, you don't receive a bonus.</li>
+</ul>
+<br>
 
 <p>
 For more questions please refer to this <a href="https://woollysocks.github.io/NLI-games-faqs/two-faq.html" target="_blank">FAQ page</a>.
