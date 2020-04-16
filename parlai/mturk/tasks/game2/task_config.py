@@ -22,7 +22,7 @@ view of search results, and in the HIT and assignment screens.
 """
 task_config[
     'hit_description'
-] = 'As a writer you\'ll write 3 claims given a prompt and then as an evaluator, you will rank claims for a differnet prompt.'
+] = 'As a writer you\'ll write 3 claims given a prompt and then as an evaluator, you will rank claims for a different prompt.'
 
 
 """One or more words or phrases that describe the HIT, separated by commas.
@@ -39,7 +39,7 @@ task_config[
 ] = '''
 <p>
 	The <a href="https://cds.nyu.edu/" target="_blank">New York University Center for Data Science</a> is collecting your answers to study
-	machine understanding of English. Thank you for your help! [This is a pilot for a larger project]
+	machine understanding of English. Thank you for your help! [This is a pilot for a larger project.]
 </p>
 
 There are two phases in each HIT: the <b>writing phase</b> and the <b>evaluating phase</b>. Each HIT has 4 people on it, and you will be paired with one person. Because you're working in teams of 4, <b>please be warned that you might have to wait for someone else to complete their task during the HIT.</b> We are going to ensure that we pay you for these wait times as well, and not just for your active work time.<br><br>
@@ -47,14 +47,14 @@ There are two phases in each HIT: the <b>writing phase</b> and the <b>evaluating
 <h4><u>Phase 1: Writing</u></h4>
 <p> You, and your partner, will be shown a prompt that describes a situation or event. Using only this description and what you know about the world, please write</p>
 <ul>
-	<li>One claim that is <strong>definitely correct</strong><em>&nbsp;</em>about the situation or event in the prompt.</li>
+	<li>One claim that is&nbsp;<strong>definitely correct</strong><em>&nbsp;</em>about the situation or event in the prompt.</li>
 	<li>One claim that is&nbsp;<strong>definitely incorrect</strong>&nbsp;about the situation or event in the prompt.</li>
 	<li>One claim that is&nbsp;<strong>neither</strong> definitely correct nor incorrect about the situation or event in the prompt.</li>
 </ul>
 <font color="red">We encourage you to write claims that are creative and require non-trivial kinds of reasoning.</font> Your partner on this HIT will also be writing claims for this prompt and your bonuses will be based on how evaluators rank you versus your partner. We will show you the claims your partner wrote.<br>
 
 <h4><u>Phase 2: Evaluating</u></h4>
-<p> You will be shown a new prompt and the claims written by the 2 other people on this HIT. You will have to evaluate claims for each of the three labels---definitely correct, definitely incorrect, and neither---explained in the previous section. For each label and set of claims you will be asked to do the following,</p>
+<p> You will be shown a new prompt and the claims written by the 2 other people on this HIT. You will have to evaluate claims for each of the three labels---definitely correct, definitely incorrect, and neither---explained in the previous section. For each label and set of claims you will be asked to do the following:</p>
 <ul>
 	<li> Given the label and the two claims written by different people, <font color="red">decide if the claims fit the label and the prompt.</font></li>
 	<li> Then, <font color="red">rank the claim in terms of creativity and complexity of reasoning.</font></li>
