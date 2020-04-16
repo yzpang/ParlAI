@@ -37,7 +37,12 @@ and on the left side of the chat page. Supports HTML formatting.
 task_config[
     'task_description'
 ] = '''
-There are two phases in each HIT: the <b>writing phase</b> and the <b>evaluating phase</b>. Each HIT has 4 people on it, and you will be paired with one person.<br><br>
+<p>
+	The <a href="https://cds.nyu.edu/" target="_blank">New York University Center for Data Science</a> is collecting your answers to study
+	machine understanding of English. Thank you for your help! [This is a pilot for a larger project]
+</p>
+
+There are two phases in each HIT: the <b>writing phase</b> and the <b>evaluating phase</b>. Each HIT has 4 people on it, and you will be paired with one person. Because you're working in teams of 4, <b>please be warned that you might have to wait for someone else to complete their task during the HIT.</b> We are going to ensure that we pay you for these wait times as well, and not just for your active work time.<br><br>
 
 <h4><u>Phase 1: Writing</u></h4>
 <p> You, and your partner, will be shown a prompt that describes a situation or event. Using only this description and what you know about the world, please write</p>

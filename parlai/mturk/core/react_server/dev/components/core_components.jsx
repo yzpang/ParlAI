@@ -1412,7 +1412,9 @@ class LeftPane extends React.Component {
     };
     let XTaskDescription = getCorrectComponent('XTaskDescription', v_id);
     let pane_size = this.props.is_cover_page ? 'col-xs-12' : 'col-xs-4';
-    let has_context = this.props.task_data.has_context;
+    //  TO-DO: fix the following hack. Not sure why context window is appearing without any context.
+    // let has_context = this.props.task_data.has_context;
+    let has_context = null
     if (this.props.is_cover_page || !has_context) {
       return (
         <div id="left-pane" className={pane_size} style={frame_style}>

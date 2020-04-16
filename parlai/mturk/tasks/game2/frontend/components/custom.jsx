@@ -624,6 +624,27 @@ class EvaluatorResponse extends React.Component {
   }
 }
 
+class FeedbackMode extends React.Component {
+  render() {
+    // TODO maybe move to CSS?
+    let pane_style = {
+      paddingLeft: '25px',
+      paddingTop: '20px',
+      paddingBottom: '20px',
+      paddingRight: '25px',
+      float: 'left',
+    };
+    return (
+      <div
+        id="response-type-done"
+        className="response-type-module"
+        style={pane_style}
+      >
+        <i>Feedback!</i>
+      </div>
+    );
+  }
+}
 
 class ResponsePane extends React.Component {
   render() {
@@ -639,20 +660,24 @@ class ResponsePane extends React.Component {
         break;
       case 'text_input':
       case 'waiting':
-        if (this.props.task_data && this.props.task_data['respond_with_form']) {
+        if (this.props.task_data && this.props.task_data['respond_with_form'] && this.props.task_data['writing'] !== true && this.props.task_data['feedback'] !== true) {
           response_pane = (
             <EvaluatorResponse
               {...this.props}
               active={this.props.chat_state == 'text_input'}
             />
           );
-        } else {
+        } else if (this.props.task_data['writing'] === true && this.props.task_data['feedback'] !== true){
           response_pane = (
             <WriterResponse
               {...this.props}
               active={this.props.chat_state == 'text_input'}
             />
           );
+        } else if (this.props.task_data['feedback'] === true){
+          response_pane = <FeedbackMode {...this.props} />;
+        } else {
+          response_pane = <XDoneResponse {...this.props} />;
         }
         break;
       case 'idle':
@@ -731,8 +756,10 @@ class CoreChatMessage extends React.Component {
         </small>
       );
     }
+    // <b>{this.props.agent_id}</b>: <span dangerouslySetInnerHTML={{ __html: display_message }} />
+    let agent_id = this.props.agent_id;
     let display_message = null;
-    if (this.props.task_data && !this.props.task_data['respond_with_form'] && 
+    if (this.props.task_data && !this.props.task_data['writing'] && !this.props.task_data['feedback'] && !this.props.task_data['respond_with_form'] && 
       (Object.entries(this.props.task_data3).length === 0)) {
       let hypothesis_entailment = this.props.message;
       let hypothesis_contradiction = this.props.task_data;
@@ -753,7 +780,7 @@ class CoreChatMessage extends React.Component {
           style={{ float: float_loc, display: 'table' }}
         >
           <span style={{ fontSize: '16px', whiteSpace: 'pre-wrap' }}>
-            <b>{this.props.agent_id}</b>: <span dangerouslySetInnerHTML={{ __html: display_message }} />
+            <span dangerouslySetInnerHTML={{ __html: agent_id }} />: <span dangerouslySetInnerHTML={{ __html: display_message }} />
           </span>
           {duration}
         </div>

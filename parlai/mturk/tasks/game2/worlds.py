@@ -53,7 +53,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
             self.sets[i] = self.agents[i*2 : (i+1)*2]
         
         self.episodeDone = False
-        self.max_meta_turns = 2
+        self.max_meta_turns = 3
         self.meta_turn = 0
         self.interim_data = []
         self.turns = 0
@@ -75,7 +75,8 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                     # premise = premise.split(".", 1)[0] + "."
                     prompt = {
                             'id': 'Prompt',
-                            'text': premise
+                            'text': premise,
+                            'task_data': {'writing':True, 'feedback':False}
                         }
                     self.prompts.append(prompt)
 
@@ -134,11 +135,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                 self.entailments, self.contradictions, self.neutrals  = {}, {}, {}
                 self.map_entail, self.map_contradict, self.map_neutral = {}, {}, {} # to store flip maps
                 for i in range(self.num_agents):
-                    self.entailments[i] = {'id':'Claim '+str((i%2)+1), 'text': self.hypotheses_collect[i]['text'], 'task_data': {'respond_with_form': [{
-                            'type': 'choices',
-                            'question': 'This is filler',
-                            'choices': [i for i in range(0, 10)]
-                        }]}}
+                    self.entailments[i] = {'id':'Claim '+str((i%2)+1), 'text': self.hypotheses_collect[i]['text'], 'task_data': {'respond_with_form':[], 'writing':False}}
                     self.contradictions[i] = {'id':'Claim '+str((i%2)+1),'text': self.hypotheses_collect[i]['task_data']}
                     self.neutrals[i] = {'id':'Claim '+str((i%2)+1),'text': self.hypotheses_collect[i]['task_data2']}
 
@@ -213,7 +210,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                 persons = [agent.demo_role for agent in self.agents]
                 label_types = ['Definitely Correct', 'Definitely Incorrect', 'Neither']
                 self.maps = [self.map_entail, self.map_contradict, self.map_neutral]
-                all_evals = [self.ents, self.conts, self.neuts]
+                hypothesis_types = [self.entailments, self.contradictions, self.neutrals]
                 set_evals = {}
                 for i in self.sets.keys():
                     set_evals[i] = []
@@ -238,9 +235,17 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                     writers = self.sets[num]
                     for i, rankings in enumerate(set_evals[j]):
                         label = label_types[i]
+                        both_hypotheses = [hypothesis_types[i][j*2]['text'], hypothesis_types[i][j*2 + 1]['text']]
+                        # hypothesis0 = self.all_hypotheses[i][j*2]
+                        # hypothesis1 = self.all_hypotheses[i][j*2 + 1]
+                        eval0_explain = ''
+                        eval1_explain = ''
+
                         writer_bonus_message = {'id': label, 'text': 'You ranked 1st! Bonus = $' + str(self.writer_bonus) +'.'}
+                        writer_rank2_message = {'id': label, 'text': 'Unfortunately, you ranked 2nd.'}
                         writer_nobonus_message = {'id':'No bonus', 'text':'Unfortunately you ranked 2nd on all 3 claims.'}
                         noagrm_bonus_message = {'id': label, 'text': 'The evaluators did not agree. Bonus = $' + str(self.ranker_bonus) + '.'} # Set as ranker_bonus to avoid incentivizing workers to always disagree on ranking
+                        noagrm_nobonus_message = {'id': label, 'text': 'You and the other ranker disagreed on the ranking.'}
                         agrm_bonus_message = {'id': label, 'text': 'You agreed with the other evaluator! Bonus = $' + str(self.ranker_bonus) + '.'}
                         eval_nobonus_message = {'id': 'No bonus', 'text': 'Unfortunately you disagreed with the other evaluator on all 3 sets.'}
 
@@ -251,15 +256,19 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                             rankings[1]['text'] = self.maps[i][this_ranker][rankings[1]['text']]
                             if rankings[0]['task_data'] is not '':
                                 eval0_justifications.append(label + ': ' + rankings[0]['task_data'])
+                                eval0_explain = rankings[0]['task_data']
                             if rankings[1]['task_data'] is not '':
                                 eval1_justifications.append(label + ': ' + rankings[1]['task_data'])
+                                eval1_explain = rankings[1]['task_data']
                         else:
                             this_ranker = self.agents[int(persons[j*2][-1])-1]
                             rankings[0]['text'] = self.maps[i][this_ranker][rankings[0]['text']]
                             if rankings[0]['task_data'] is not '':
                                 eval1_justifications.append(label + ': ' + rankings[0]['task_data'])
+                                eval1_explain = rankings[0]['task_data']
                             if rankings[1]['task_data'] is not '':
                                 eval0_justifications.append(label + ': ' + rankings[1]['task_data'])
+                                eval0_explain = rankings[1]['task_data']
 
                         # Show messages about bonuses
                         if rankings[0]['text'] == rankings[1]['text']:
@@ -268,40 +277,65 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                                 evaluator_feedback.append((evaluator, agrm_bonus_message))
                             if rankings[0]['text'] == 'Claim 1':
                                 writer_feedback.append((writers[0], writer_bonus_message))
+                                writer_feedback.append((writers[1], writer_rank2_message))
                                 w0_rank += 1
                             else:
                                 writer_feedback.append((writers[1], writer_bonus_message))
+                                writer_feedback.append((writers[0], writer_rank2_message))
                                 w1_rank += 1
                         else:
                             # Rankers did not agree
+                            ## Tell writers
                             for writer in writers:
                                 writer_feedback.append((writer, noagrm_bonus_message))
                                 w0_rank += 1
                                 w1_rank +=1
-                        
-                    # If rankers never agree, inform them of that
-                    if agrm_rate == 0:
-                        for evaluator in evaluators:
-                            evaluator_feedback.append((evaluator, eval_nobonus_message))
+                            ## Tell rankers
+                            for evaluator in evaluators:
+                                evaluator_feedback.append((evaluator, noagrm_nobonus_message))
 
-                    # If a writer got not bonuses, just inform them of that
-                    if w0_rank == 0:
-                        writer_feedback.append((writers[0], writer_nobonus_message))
-                    elif w1_rank == 0:
-                        writer_feedback.append((writers[1], writer_nobonus_message))
-                    else:
-                        pass
+                        if eval0_explain != '':
+                            evaluator_feedback.append((evaluators[1], {'id':'Explanation from other evaluator', 'text': eval0_explain}))
+                            for writer in writers:
+                                writer_feedback.append((writer, {'id':'Evaluator 1\'s explanation', 'text': eval0_explain}))
+                        if eval1_explain != '':
+                            evaluator_feedback.append((evaluators[0], {'id':'Explanation from other evaluator', 'text': eval1_explain}))
+                            for writer in writers:
+                                writer_feedback.append((writer, {'id':'Evaluator 2\'s explanation', 'text': eval1_explain}))
+                        
+                        # Show writers their and the other writer's 
+                        # claims again
+                        for n, writer in enumerate(writers):
+                            writer_feedback.append((writers[n], {'id':'Your claim', 'text':both_hypotheses[n]}))
+                            writer_feedback.append((writers[n], {'id':'Other claim', 'text':both_hypotheses[(n+1)%2]}))
+                        # writer_feedback.append((writers[0], {'id':'Your claim', 'text':hypothesis0}))
+                        # writer_feedback.append((writers[0], {'id':'Other claim', 'text':hypothesis1}))
+                        # writer_feedback.append((writers[1], {'id':'Your claim', 'text':hypothesis1}))
+                        # writer_feedback.append((writers[1], {'id':'Other claim', 'text':hypothesis0}))
+                    
+                    # If rankers never agree, inform them of that
+                    # if agrm_rate == 0:
+                    #     for evaluator in evaluators:
+                    #         evaluator_feedback.append((evaluator, eval_nobonus_message))
+
+                    # # If a writer got not bonuses, just inform them of that
+                    # if w0_rank == 0:
+                    #     writer_feedback.append((writers[0], writer_nobonus_message))
+                    # elif w1_rank == 0:
+                    #     writer_feedback.append((writers[1], writer_nobonus_message))
+                    # else:
+                    #     pass
 
                     # Show rankers partner's justifications
                     # and show writer's both sets of justifications 
-                    if len(eval1_justifications) != 0:
-                        evaluator_feedback.append((evaluators[1], {'id':'Justifications from other evaluator', 'text': "\n"+"\n".join(eval0_justifications)}))
-                        for writer in writers:
-                            writer_feedback.append((writer, {'id':'Evaluator 1\'s justifications', 'text': "\n"+"\n".join(eval0_justifications)}))
-                    if len(eval0_justifications) != 0:
-                        evaluator_feedback.append((evaluators[0], {'id':'Justifications from other evaluator', 'text': "\n"+"\n".join(eval1_justifications)}))
-                        for writer in writers:
-                            writer_feedback.append((writer, {'id':'Evaluator 2\'s justifications', 'text': "\n"+"\n".join(eval1_justifications)}))
+                    # if len(eval1_justifications) != 0:
+                    #     evaluator_feedback.append((evaluators[1], {'id':'Justifications from other evaluator', 'text': "\n"+"\n".join(eval0_justifications)}))
+                    #     for writer in writers:
+                    #         writer_feedback.append((writer, {'id':'Evaluator 1\'s justifications', 'text': "\n"+"\n".join(eval0_justifications)}))
+                    # if len(eval0_justifications) != 0:
+                    #     evaluator_feedback.append((evaluators[0], {'id':'Justifications from other evaluator', 'text': "\n"+"\n".join(eval1_justifications)}))
+                    #     for writer in writers:
+                    #         writer_feedback.append((writer, {'id':'Evaluator 2\'s justifications', 'text': "\n"+"\n".join(eval1_justifications)}))
 
                     # Sort out evaluator feedback+bonues by agent and show the messsages
                     evaluator_i_feedback = {}
@@ -320,7 +354,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
 
                 # Organize data for future nikita
                 label_types = ['entailment', 'contradiction', 'neutral']
-                hypothesis_types = [self.entailments, self.contradictions, self.neutrals]
+                # hypothesis_types = [self.entailments, self.contradictions, self.neutrals]
                 for i, evals in enumerate(self.evals):
                     for j in range(len(evals)):
                         evals[j]['label'] = label_types[i]
@@ -371,7 +405,9 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                                             '\n\n<b>'+hyp_0['id']+'</b>: '+hyp_0['text'] + 
                                             '\n<b>'+hyp_1['id']+'</b>: '+hyp_1['text']})
 
-        flip = random.randint(0,1)
+        # To-do: remove unnecessary if continuing to not do a coin flip.
+        # flip = random.randint(0,1)
+        flip = 0
         mappy = [None, None]
         if flip == 0:
             # mappy_0 = self.noflip
@@ -391,6 +427,7 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
             elif len(agents) == 1:
                 make_observation(agents[0], flip1, flip0)
                 mappy[0] = self.yesflip
+                # import pdb; pdb.set_trace()
             else:
                 assert "Do not currently support more than 2 agents in a single set."
         return mappy[0], mappy[1]
@@ -403,14 +440,16 @@ class MultiRoleAgentWorld(MTurkTaskWorld):
                     pass
                 elif 'No bonus' in feedback['id']:
                     text += '\n' + feedback['text']
-                elif 'justifications' in feedback['id'].lower():
-                        text += '\n\n<b>' + feedback['id'] + '</b>: ' + feedback['text']
-                else:
-                    text += '\n' + feedback['id'] + ': ' + feedback['text']
+                elif 'explanation' in feedback['id'].lower():
+                        text += '\n<u>' + feedback['id'] + '</u>: ' + feedback['text']
+                elif 'claim' in feedback['id']:
+                    text += '\n<i><u>' + feedback['id'] + '</u>: ' + feedback['text' + '</i>']
+                else: #label
+                    text += '\n\n<b>' + feedback['id'] + '</b>: ' + '\n' + feedback['text']
             if not writing: # evaluation feedback
-                agents[i].observe({'id':'Thank you! Here are your bonuses for ranking based on agreement with the other evaluator', 'text':text})
+                agents[i].observe({'id':'Thank you! Here are your bonuses for ranking based on agreement with the other evaluator', 'text':text, 'task_data': {'respond_with_form':[], 'feedback':True}})
             else: # writing feedback
-                agents[i].observe({'id':'And these are your bonuses for the claims you wrote in Phase 1', 'text':text})
+                agents[i].observe({'id':'And these are your bonuses for the claims you wrote in Phase 1', 'text':text, 'task_data': {'respond_with_form':[], 'feedback':True}})
 
     def episode_done(self):
         return self.episodeDone
